@@ -102,9 +102,7 @@ a:hover { text-decoration-thickness: 2px; }
 .lang-switch a:hover { border-color: var(--panel-muted); }
 
 .portrait {
-  width: 100%; display: block;
-  height: clamp(9rem, 40vh, 24rem);
-  object-fit: cover; object-position: 50% 22%;
+  width: 100%; height: auto; display: block;
   border-radius: 4px;
   border: 1px solid var(--panel-line);
 }
@@ -215,7 +213,7 @@ a:hover { text-decoration-thickness: 2px; }
   .emblem { width: 4.5rem; }
   .lang-switch { position: static; align-self: flex-end; margin-bottom: -.75rem; }
   .profile-id { flex-direction: row; align-items: center; gap: 1rem; }
-  .portrait { width: 5.5rem; height: 5.5rem; flex: none; border-radius: 50%; object-position: 50% 18%; }
+  .portrait { width: 5.5rem; height: 5.5rem; flex: none; border-radius: 50%; object-fit: cover; object-position: 50% 18%; }
   .profile h1 { font-size: 1.75rem; }
   .profile-footer { display: none; }
   .catalog { padding-top: 2rem; }
