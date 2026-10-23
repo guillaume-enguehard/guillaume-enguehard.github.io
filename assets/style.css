@@ -150,40 +150,46 @@ a:hover { text-decoration-thickness: 2px; }
 
 .games {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(min(100%, 19rem), 1fr));
-  gap: clamp(1.25rem, 2.5vw, 2rem);
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 13.5rem), 1fr));
+  gap: clamp(1rem, 2vw, 1.5rem);
 }
 
 .game {
   display: flex; flex-direction: column;
   background: var(--surface);
   border: 1px solid var(--line);
-  border-top: 5px solid var(--blue);
+  border-top: 4px solid var(--blue);
   border-radius: 6px;
   overflow: hidden;
 }
 .game:nth-child(even) { border-top-color: var(--ochre); }
 .game-visual {
-  width: 100%; aspect-ratio: 4 / 3; object-fit: cover;
+  width: 100%; aspect-ratio: 16 / 10; object-fit: cover;
   display: block; background: var(--paper);
   border-bottom: 1px solid var(--line);
 }
 .game-body {
   display: flex; flex-direction: column; flex: 1;
-  padding: 1.25rem 1.35rem 1.4rem;
+  padding: .9rem 1rem 1rem;
 }
-.game h3 { font-size: 1.45rem; line-height: 1.2; margin: 0 0 .4rem; font-weight: 800; }
-.game-pitch { margin: 0 0 1rem; }
+.game h3 { font-size: 1.25rem; line-height: 1.2; margin: 0 0 .3rem; font-weight: 800; }
+.game-pitch { margin: 0 0 .75rem; font-size: 1rem; line-height: 1.5; }
 .game-facts {
-  display: flex; flex-wrap: wrap; gap: .35rem 1.4rem;
-  margin: 0 0 1.25rem; font-size: 1rem;
+  display: flex; flex-wrap: wrap; gap: .2rem 1rem;
+  margin: 0 0 .9rem; font-size: .95rem;
 }
-.game-facts div { display: flex; gap: .4rem; }
+.game-facts div { display: flex; gap: .35rem; }
 .game-facts dt { color: var(--muted); }
 .game-facts dd { margin: 0; font-weight: 700; }
-.game-actions { margin-top: auto; display: grid; grid-template-columns: 1fr 1fr; gap: .6rem; }
-.game-actions .btn-primary { grid-column: 1 / -1; }
-.game-actions .btn:not(.btn-primary) { white-space: nowrap; padding-inline: .6rem; }
+.game-actions { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.1rem; }
+.game-actions .btn-primary { flex: 1 0 100%; min-height: 2.5rem; }
+/* Secondary links (rules, manual): plain underlined links, easier to fit */
+.game-actions .btn:not(.btn-primary) {
+  min-height: 0; padding: .2rem 0; border: 0; border-radius: 0;
+  background: none; font-size: .95rem;
+  text-decoration: underline; text-underline-offset: .2em;
+}
+.game-actions .btn:not(.btn-primary):hover { background: none; text-decoration-thickness: 2px; }
 
 /* Buttons */
 .btn {
