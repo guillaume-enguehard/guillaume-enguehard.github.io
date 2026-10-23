@@ -1,0 +1,342 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Jouez à DORON en ligne contre l'ordinateur ou à deux : 6 × 6 ou 9 × 9, avec ou sans prise.">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<title>DORON · Jouer en ligne</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jost:wght@400;500;600;700&display=swap">
+<style>
+/* Une seule vue, sans défilement : barre de choix, ligne d'état, plateau qui remplit l'espace, barre d'actions.
+   Esprit Steffen Spiele : hêtre, érable, noyer, un seul rouge (le doron). */
+:root{
+  --bg:#f3f0ea; --panel:#fbfaf7; --ink:#1d1b18; --muted:#6b655c; --rule:#dcd6cb;
+  --beech:#e2c79b; --beech-dark:#c9a873; --cup:#d4b47f; --cup-shadow:#b8955f;
+  --maple:#f6ead2; --maple-edge:#bfa77d; --walnut:#3b2a1e; --walnut-edge:#1f150e;
+  --red:#c42d1f; --red-soft:rgba(196,45,31,.18); --hint:rgba(29,27,24,.2); --good:#2f6b3a;
+  --veil:rgba(29,27,24,.45);
+  --display:"Jost","Futura","Century Gothic",system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#191714; --panel:#211e1a; --ink:#ece6dc; --muted:#a59d90; --rule:#3a352e;
+  --beech:#b99a6c; --beech-dark:#9c7d52; --cup:#a98a5c; --cup-shadow:#7f6640;
+  --maple:#f1e3c6; --maple-edge:#9e8a64; --walnut:#2a1d14; --walnut-edge:#0d0805;
+  --red:#e0503f; --red-soft:rgba(224,80,63,.25); --hint:rgba(0,0,0,.3); --good:#7cc08a; --veil:rgba(0,0,0,.6); color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#191714; --panel:#211e1a; --ink:#ece6dc; --muted:#a59d90; --rule:#3a352e;
+  --beech:#b99a6c; --beech-dark:#9c7d52; --cup:#a98a5c; --cup-shadow:#7f6640;
+  --maple:#f1e3c6; --maple-edge:#9e8a64; --walnut:#2a1d14; --walnut-edge:#0d0805;
+  --red:#e0503f; --red-soft:rgba(224,80,63,.25); --hint:rgba(0,0,0,.3); --good:#7cc08a; --veil:rgba(0,0,0,.6); color-scheme:dark}
+*{box-sizing:border-box}
+html,body{height:100%;margin:0}
+body{background:var(--bg);color:var(--ink);font-family:var(--display);font-size:15px;overflow:hidden;
+  padding-left:max(12px,env(safe-area-inset-left,0px));padding-right:max(12px,env(safe-area-inset-right,0px))}
+.app{height:calc(100dvh - env(safe-area-inset-top,0px) - env(safe-area-inset-bottom,0px));max-width:760px;margin:0 auto;
+  display:flex;flex-direction:column;gap:8px;padding-block:10px}
+.top{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:8px}
+h1{font-weight:700;font-size:26px;letter-spacing:.14em;margin:0;line-height:1}
+h1 span{color:var(--red)}
+.seg{display:inline-flex;border:1.5px solid var(--ink);border-radius:8px;overflow:hidden}
+.seg button{font:inherit;font-size:14px;border:none;background:transparent;color:var(--ink);padding:6px 10px;cursor:pointer;white-space:nowrap}
+.seg button+button{border-left:1.5px solid var(--ink)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+button:focus-visible{outline:3px solid var(--red);outline-offset:2px}
+.status{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:4px 14px;min-height:28px}
+.turn{display:flex;align-items:center;gap:8px;font-size:17px;font-weight:500}
+.dot{width:16px;height:16px;border-radius:50%;flex:none;display:inline-block}
+.dot.c{background:var(--maple);box-shadow:inset 0 0 0 1.5px var(--maple-edge)}
+.dot.s{background:var(--walnut);box-shadow:inset 0 0 0 1.5px var(--walnut-edge),0 0 0 1px var(--muted)}
+.groups{display:flex;gap:14px;font-size:14px;font-variant-numeric:tabular-nums;color:var(--muted)}
+.groups span{display:inline-flex;align-items:center;gap:6px}
+.stage{flex:1;min-height:0;container-type:size;display:flex;align-items:center;justify-content:center}
+.board{width:min(100cqw,100cqh);height:min(100cqw,100cqh);background:var(--beech);border-radius:12px;
+  box-shadow:inset 0 0 0 3px var(--beech-dark);padding:3.5%;display:grid;gap:1.6%}
+.cell{position:relative;border:none;padding:0;margin:0;background:var(--cup);border-radius:50%;
+  box-shadow:inset 0 2px 5px var(--cup-shadow);cursor:default;min-width:0;min-height:0}
+.cell.legal{cursor:pointer}
+.cell.legal::before{content:"";position:absolute;inset:36%;border-radius:50%;background:var(--hint)}
+.cell.legal:hover::before{background:var(--red-soft);inset:22%}
+.stone,.messenger,.gone{position:absolute;inset:8%;border-radius:50%;pointer-events:none}
+.stone.c{background:radial-gradient(circle at 35% 30%,#fff9ec 0,var(--maple) 45%,#e6d2ad 100%);box-shadow:0 2px 3px rgba(0,0,0,.25),inset 0 0 0 1.5px var(--maple-edge)}
+.stone.s{background:radial-gradient(circle at 35% 30%,#6b4e39 0,var(--walnut) 55%,#1a110b 100%);box-shadow:0 2px 3px rgba(0,0,0,.35),inset 0 0 0 1.5px var(--walnut-edge)}
+.stone.win{box-shadow:0 0 0 3px var(--good),0 2px 3px rgba(0,0,0,.3)}
+.stone.fresh{animation:drop .22s ease-out}
+.gone{border:3px solid var(--red);animation:fade 1.2s ease-out forwards}
+.messenger{inset:8%;background:radial-gradient(circle at 35% 30%,#ff8a72 0,var(--red) 55%,#7d1a10 100%);box-shadow:0 2px 3px rgba(0,0,0,.3),inset 0 0 0 1.5px #7d1a10}
+@keyframes drop{from{transform:scale(1.25);opacity:.4}to{transform:none;opacity:1}}
+@keyframes fade{from{opacity:1}to{opacity:0}}
+@media (prefers-reduced-motion:reduce){.stone.fresh,.gone{animation:none}}
+.bar{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.btn{font:inherit;font-size:14px;font-weight:500;border:1.5px solid var(--ink);background:transparent;color:var(--ink);border-radius:8px;padding:7px 12px;cursor:pointer}
+.btn.primary{background:var(--red);border-color:var(--red);color:#fff}
+.btn:disabled{opacity:.35;cursor:default}
+.hint{margin-left:auto;font-size:13px;color:var(--muted);text-align:right;min-width:0}
+[hidden]{display:none!important}
+.overlay{position:fixed;inset:0;background:var(--veil);display:flex;align-items:center;justify-content:center;padding:16px;z-index:5}
+.card{background:var(--panel);color:var(--ink);border-radius:12px;max-width:520px;width:100%;max-height:100%;overflow:auto;padding:18px 20px;display:flex;flex-direction:column;gap:10px}
+.card h2{margin:0;font-size:18px}
+.card ol{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14.5px;line-height:1.45}
+.card h3{margin:4px 0 0;font-size:15.5px}
+.card ul{margin:0;padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px;line-height:1.45}
+.tag{display:inline-block;font-size:11.5px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;border:1.5px solid var(--muted);color:var(--muted);border-radius:6px;padding:0 6px;margin-right:6px;vertical-align:1px}
+.tag.on{border-color:var(--red);background:var(--red);color:#fff}
+.card p{margin:0;font-size:14px;line-height:1.45;color:var(--muted)}
+@media (max-width:520px){h1{font-size:22px}.seg button{padding:6px 8px;font-size:13px}.hint{display:none}}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <div class="top">
+    <h1>D<span>O</span>RON</h1>
+    <div class="seg" role="group" aria-label="Plateau">
+      <button type="button" data-s="6">6 × 6</button>
+      <button type="button" data-s="9">9 × 9</button>
+    </div>
+    <div class="seg" role="group" aria-label="Prise">
+      <button type="button" data-c="0">Sans prise</button>
+      <button type="button" data-c="1">Avec prise</button>
+    </div>
+    <div class="seg" role="group" aria-label="Adversaire : à deux, ou ordinateur facile, moyen ou fort">
+      <button type="button" data-o="deux">À deux</button>
+      <button type="button" data-o="facile">Facile</button>
+      <button type="button" data-o="moyen">Moyen</button>
+      <button type="button" data-o="fort">Fort</button>
+    </div>
+  </div>
+
+  <div class="status">
+    <div class="turn" id="turn" aria-live="polite"></div>
+    <div class="groups" id="groups"></div>
+  </div>
+
+  <div class="stage"><div class="board" id="board" role="grid" aria-label="Plateau"></div></div>
+
+  <div class="bar">
+    <button class="btn primary" id="new" type="button">Nouvelle partie</button>
+    <button class="btn" id="undo" type="button">Annuler</button>
+    <button class="btn" id="help" type="button" aria-haspopup="dialog">Règles</button>
+    <span class="hint" id="hint"></span>
+  </div>
+</div>
+
+<div class="overlay" id="rules" hidden role="dialog" aria-modal="true" aria-labelledby="rules-t">
+  <div class="card">
+    <h2 id="rules-t">Règles de DORON</h2>
+    <ol>
+      <li>Le doron (la pièce rouge ; en grec, dôron veut dire « don ») part du coin a1, en bas à gauche. Clair commence.</li>
+      <li>À ton tour, déplace le doron en ligne droite, dans l'une des 8 directions, sur des cases vides, sans sauter.</li>
+      <li>Ta pierre tombe sur la case qu'il vient de quitter : c'est ton adversaire qui a choisi où elle tombe.</li>
+      <li>Si le doron ne peut plus bouger, le joueur au trait le retire, pose sa pierre à sa place et la partie s'arrête.</li>
+      <li>Le plus grand groupe (pierres reliées par les côtés) gagne ; à égalité, on compare les groupes suivants.</li>
+    </ol>
+    <h3>Options</h3>
+    <ul>
+      <li><span class="tag" id="tag-cap"></span><b>Prise</b> (au choix, bouton « Avec prise ») : quand ta pierre posée coince une pierre adverse <b>seule</b> entre elle et une autre de tes pierres, horizontalement ou verticalement, cette pierre est retirée et sa case redevient vide. Deux pierres adverses alignées ne sont pas prises ; une prise n'en déclenche pas d'autre ; le doron ne compte pour personne ; la dernière pierre, posée à la place du doron bloqué, peut prendre aussi. Si prises et reprises tournent en rond (très rare), la partie s'arrête après 400 coups et on compte les groupes.</li>
+      <li><span class="tag" id="tag-komi"></span><b>Komi</b> (automatique en 9 × 9) : si les deux plus grands groupes et les deux deuxièmes groupes sont égaux, Sombre gagne. En 6 × 6, pas de komi : en famille, le perdant de la partie précédente prend Clair.</li>
+    </ul>
+    <p id="rules-var"></p>
+    <button class="btn primary" id="close" type="button">Compris</button>
+  </div>
+</div>
+
+<script>
+(() => {
+const T = {"on": "activée", "off": "désactivée", "kon": "activé", "koff": "désactivé", "now": "Partie en cours : {v}.", "vbase": "variante de base, 6 × 6 sans prise", "vcap": "avec prise", "vkomi": "avec komi", "light": "Clair", "dark": "Sombre", "plays": "joue", "wins": "gagne", "vs": "contre", "draw": "Partie nulle", "tkomi": "(komi)", "tie": "(départage)", "you": "(toi)", "cpu": "(ordinateur)", "think": "L'ordinateur réfléchit…", "swap": "Nouvelle partie : vous changez de couleur.", "first": "Touche une case marquée pour y envoyer le doron.", "taken": "Une pierre a été prise.", "falls": "Ta pierre tombera en", "alight": ", clair", "adark": ", sombre", "amsg": ", doron", "aplay": ", jouable", "aboard": "Plateau {n} sur {n}"};
+const DIRS = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]], ORTH = [[1,0],[-1,0],[0,1],[0,-1]];
+let ui = { size: 6, cap: false, o: "fort", aiSide: 1 };
+try { Object.assign(ui, JSON.parse(localStorage.getItem("doron-proto3") || "{}")); } catch (e) {}
+if (ui.size !== 6 && ui.size !== 9) ui.size = 6; ui.cap = !!ui.cap;
+const save = () => { try { localStorage.setItem("doron-proto3", JSON.stringify(ui)); } catch (e) {} };
+let N, NC, HOME, R, S, hist, cells = [];
+const $ = id => document.getElementById(id), board = $("board");
+function fresh() { return { g: new Int8Array(NC), m: HOME, side: 0, over: false, ply: 0, last: -1, last2: -1, gone: [] }; }
+function legal(st) {
+  if (st.over) return [];
+  const out = [], r0 = (st.m / N) | 0, c0 = st.m % N;
+  for (const [dr, dc] of DIRS) {
+    let r = r0 + dr, c = c0 + dc;
+    while (r >= 0 && r < N && c >= 0 && c < N && st.g[r * N + c] === 0) { out.push(r * N + c); r += dr; c += dc; }
+  }
+  return out;
+}
+function capture(g, x, me, gone) {               // une pierre adverse seule, coincée contre une pierre amie
+  const r = (x / N) | 0, c = x % N, op = 3 - me;
+  for (const [dr, dc] of ORTH) {
+    const r1 = r + dr, c1 = c + dc, r2 = r + 2 * dr, c2 = c + 2 * dc;
+    if (r2 < 0 || r2 >= N || c2 < 0 || c2 >= N) continue;
+    if (g[r1 * N + c1] === op && g[r2 * N + c2] === me) { g[r1 * N + c1] = 0; gone && gone.push(r1 * N + c1); }
+  }
+}
+function play(st, d, track) {
+  const t = { g: st.g.slice(), m: d, side: st.side ^ 1, over: false, ply: st.ply + 1, last: st.m, last2: -1, gone: [] };
+  t.g[st.m] = st.side + 1;
+  if (R.cap) capture(t.g, st.m, st.side + 1, track ? t.gone : null);
+  if (legal(t).length === 0) {
+    t.g[t.m] = t.side + 1; if (R.cap) capture(t.g, t.m, t.side + 1, track ? t.gone : null);
+    t.last2 = t.m; t.m = -1; t.over = true;
+  } else if (R.cap && t.ply >= 400) { t.m = -1; t.over = true; }   // très rare : prises et reprises sans fin
+  return t;
+}
+function groups(g, p) {
+  const seen = new Uint8Array(NC), out = [];
+  for (let i = 0; i < NC; i++) if (g[i] === p && !seen[i]) {
+    const cl = [i]; seen[i] = 1;
+    for (let k = 0; k < cl.length; k++) {
+      const x = cl[k], r = (x / N) | 0, c = x % N;
+      for (const [dr, dc] of ORTH) {
+        const rr = r + dr, cc = c + dc, y = rr * N + cc;
+        if (rr >= 0 && rr < N && cc >= 0 && cc < N && g[y] === p && !seen[y]) { seen[y] = 1; cl.push(y); }
+      }
+    }
+    out.push(cl);
+  }
+  return out.sort((a, b) => b.length - a.length);
+}
+function compare(g) {                              // +1 Clair, -1 Sombre, 0 nulle
+  const a = groups(g, 1).map(x => x.length), b = groups(g, 2).map(x => x.length);
+  const m = R.komi ? 2 : Math.max(a.length, b.length);
+  for (let i = 0; i < m; i++) { const x = a[i] || 0, y = b[i] || 0; if (x !== y) return x > y ? 1 : -1; }
+  return R.komi ? -1 : 0;
+}
+function liveCells(st) {
+  const seen = new Uint8Array(NC); if (st.m < 0) return seen;
+  const stack = [st.m];
+  while (stack.length) {
+    const m = stack.pop(), r0 = (m / N) | 0, c0 = m % N;
+    for (const [dr, dc] of DIRS) {
+      let r = r0 + dr, c = c0 + dc;
+      while (r >= 0 && r < N && c >= 0 && c < N && st.g[r * N + c] === 0 && r * N + c !== st.m) {
+        const y = r * N + c; if (!seen[y]) { seen[y] = 1; stack.push(y); } r += dr; c += dc;
+      }
+    }
+  }
+  return seen;
+}
+// IA : alpha-bêta à approfondissement progressif, évaluation « plus grands groupes + frontière vivante » (celle du moteur de simulation)
+function evalFor(st, me) {
+  const g = st.g.slice(); if (st.m >= 0) g[st.m] = st.side + 1;
+  const A = groups(g, me + 1), B = groups(g, 2 - me), live = liveCells(st);
+  const la = A[0] ? A[0].length : 0, lb = B[0] ? B[0].length : 0, sa = A[1] ? A[1].length : 0, sb = B[1] ? B[1].length : 0;
+  const front = (G, L) => { const f = new Uint8Array(NC); let k = 0;
+    for (const grp of G) if (grp.length >= L - 1) for (const x of grp) { const r = (x / N) | 0, c = x % N;
+      for (const [dr, dc] of ORTH) { const rr = r + dr, cc = c + dc, y = rr * N + cc;
+        if (rr >= 0 && rr < N && cc >= 0 && cc < N && live[y] && !f[y]) { f[y] = 1; k++; } } }
+    return k; };
+  return 100 * (la - lb) + 10 * (sa - sb) + 6 * (front(A, la) - front(B, lb));
+}
+let deadline = 0;
+const TIMEOUT = {};
+function ab(st, depth, alpha, beta, me) {
+  if (st.over) { const r = compare(st.g); return (me === 0 ? r : -r) * 100000; }
+  if (depth === 0) return evalFor(st, me);
+  if (performance.now() > deadline) throw TIMEOUT;
+  const mv = legal(st);
+  if (st.side === me) { let v = -1e9; for (const d of mv) { v = Math.max(v, ab(play(st, d), depth - 1, alpha, beta, me)); alpha = Math.max(alpha, v); if (alpha >= beta) break; } return v; }
+  let v = 1e9; for (const d of mv) { v = Math.min(v, ab(play(st, d), depth - 1, alpha, beta, me)); beta = Math.min(beta, v); if (alpha >= beta) break; } return v;
+}
+function aiMove(st) {
+  const me = st.side, mv = legal(st);
+  if (ui.o === "facile") {                         // un coup d'avance, avec un peu de hasard
+    deadline = Infinity; let best = [], bv = -Infinity;
+    for (const d of mv) { const v = ab(play(st, d), 0, -1e9, 1e9, me) + Math.random() * 60; if (v > bv) { bv = v; best = [d]; } }
+    return best[0];
+  }
+  if (ui.o === "moyen") {                         // deux coups d'avance, léger hasard entre coups proches
+    deadline = Infinity; let best = [], bv = -Infinity;
+    for (const d of mv) { const v = ab(play(st, d), 1, -1e9, 1e9, me) + Math.random() * 15; if (v > bv) { bv = v; best = [d]; } }
+    return best[0];
+  }
+  deadline = performance.now() + (N > 6 ? 1100 : 800);
+  let choice = mv[Math.floor(Math.random() * mv.length)], order = mv.slice();
+  for (let depth = 1; depth <= 12; depth++) {
+    try {
+      const sc = order.map(d => [d, ab(play(st, d), depth - 1, -1e9, 1e9, me) + Math.random()]);
+      sc.sort((a, b) => b[1] - a[1]); choice = sc[0][0]; order = sc.map(x => x[0]);
+      if (Math.abs(sc[0][1]) >= 99000) break;
+    } catch (e) { if (e !== TIMEOUT) throw e; break; }
+  }
+  return choice;
+}
+
+// interface
+const isAi = () => ui.o !== "deux" && !S.over && S.side === ui.aiSide;
+function setup() {
+  R = { n: ui.size, cap: ui.cap, komi: ui.size === 9 }; N = R.n; NC = N * N; HOME = (N - 1) * N;
+  board.style.gridTemplateColumns = `repeat(${N},1fr)`; board.style.gridTemplateRows = `repeat(${N},1fr)`;
+  board.setAttribute("aria-label", T.aboard.replaceAll("{n}", N));
+  board.innerHTML = ""; cells = [];
+  for (let i = 0; i < NC; i++) {
+    const b = document.createElement("button"); b.type = "button"; b.className = "cell" + (i === HOME ? " home" : "");
+    b.setAttribute("role", "gridcell"); b.addEventListener("click", () => onClick(i)); board.appendChild(b); cells.push(b);
+  }
+  $("tag-cap").textContent = R.cap ? T.on : T.off; $("tag-cap").classList.toggle("on", R.cap);
+  $("tag-komi").textContent = R.komi ? T.kon : T.koff; $("tag-komi").classList.toggle("on", R.komi);
+  $("rules-var").textContent = T.now.replace("{v}", (!R.cap && !R.komi) ? T.vbase : `${N} × ${N}` + (R.cap ? ", " + T.vcap : "") + (R.komi ? ", " + T.vkomi : ""));
+}
+function newGame(swap) {
+  if (swap && ui.o !== "deux") ui.aiSide ^= 1;
+  save(); setup(); S = fresh(); hist = []; pressed(); render(false); setTimeout(maybeAi, 350);
+}
+function onClick(i) {
+  if (S.over || isAi() || !legal(S).includes(i)) return;
+  hist.push(S); S = play(S, i, true); render(true); setTimeout(maybeAi, 250);
+}
+function maybeAi() {
+  if (!isAi()) return;
+  $("turn").innerHTML = `<span class="dot ${S.side ? "s" : "c"}"></span>${T.think}`;
+  setTimeout(() => { const d = aiMove(S); hist.push(S); S = play(S, d, true); render(true); maybeAi(); }, 40);
+}
+const nm = i => "abcdefghi"[i % N] + (N - ((i / N) | 0));
+function render(anim) {
+  const lg = new Set(isAi() ? [] : legal(S)), win = new Set(), gone = new Set(anim ? S.gone : []);
+  let r = null;
+  if (S.over) { r = compare(S.g); if (r) groups(S.g, r === 1 ? 1 : 2)[0]?.forEach(x => win.add(x)); }
+  cells.forEach((b, i) => {
+    b.innerHTML = ""; b.classList.toggle("legal", lg.has(i));
+    b.setAttribute("aria-label", nm(i) + (S.g[i] === 1 ? T.alight : S.g[i] === 2 ? T.adark : i === S.m ? T.amsg : lg.has(i) ? T.aplay : ""));
+    if (S.g[i]) { const s = document.createElement("span"); s.className = "stone " + (S.g[i] === 1 ? "c" : "s") + (win.has(i) ? " win" : "") + (anim && (i === S.last || i === S.last2) ? " fresh" : ""); b.appendChild(s); }
+    if (gone.has(i)) { const s = document.createElement("span"); s.className = "gone"; b.appendChild(s); }
+    if (i === S.m) { const m = document.createElement("span"); m.className = "messenger"; b.appendChild(m); }
+  });
+  const a = groups(S.g, 1).map(x => x.length), b = groups(S.g, 2).map(x => x.length);
+  const fmt = v => v.length ? v.slice(0, 4).join(" · ") + (v.length > 4 ? " …" : "") : "—";
+  $("groups").innerHTML = `<span><i class="dot c"></i>${fmt(a)}</span><span><i class="dot s"></i>${fmt(b)}</span>`;
+  const you = ui.o === "deux" ? "" : " " + (S.side === ui.aiSide ? T.cpu : T.you);
+  if (S.over) {
+    const big = `${a[0] || 0} ${T.vs} ${b[0] || 0}`;
+    $("turn").innerHTML = r === 0 ? T.draw :
+      `<span class="dot ${r === 1 ? "c" : "s"}"></span>${r === 1 ? T.light : T.dark} ${T.wins} · ${big}` + ((a[0] || 0) === (b[0] || 0) ? " " + (R.komi && (a[1] || 0) === (b[1] || 0) ? T.tkomi : T.tie) : "");
+    $("hint").textContent = ui.o === "deux" ? "" : T.swap;
+  } else {
+    $("turn").innerHTML = `<span class="dot ${S.side ? "s" : "c"}"></span>${S.side ? T.dark : T.light} ${T.plays}${you}`;
+    $("hint").textContent = S.ply === 0 && !isAi() ? T.first :
+      isAi() ? "" : (R.cap && S.gone.length && anim ? T.taken : `${T.falls} ${nm(S.m)}.`);
+  }
+  $("undo").disabled = hist.length === 0 || isAi();
+}
+function pressed() {
+  document.querySelectorAll("[data-s]").forEach(b => b.setAttribute("aria-pressed", +b.dataset.s === ui.size));
+  document.querySelectorAll("[data-c]").forEach(b => b.setAttribute("aria-pressed", (b.dataset.c === "1") === ui.cap));
+  document.querySelectorAll("[data-o]").forEach(b => b.setAttribute("aria-pressed", b.dataset.o === ui.o));
+}
+document.querySelectorAll("[data-s]").forEach(b => b.onclick = () => { if (ui.size !== +b.dataset.s) { ui.size = +b.dataset.s; newGame(false); } });
+document.querySelectorAll("[data-c]").forEach(b => b.onclick = () => { const c = b.dataset.c === "1"; if (ui.cap !== c) { ui.cap = c; newGame(false); } });
+document.querySelectorAll("[data-o]").forEach(b => b.onclick = () => { ui.o = b.dataset.o; save(); pressed(); render(false); maybeAi(); });
+$("new").onclick = () => newGame(true);
+$("undo").onclick = () => {
+  if (!hist.length || isAi()) return;
+  S = hist.pop(); if (ui.o !== "deux" && S.side === ui.aiSide && hist.length) S = hist.pop();
+  render(false); maybeAi();
+};
+$("help").onclick = () => { $("rules").hidden = false; $("close").focus(); };
+$("close").onclick = () => { $("rules").hidden = true; $("help").focus(); };
+$("rules").addEventListener("click", e => { if (e.target === $("rules")) $("close").click(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && !$("rules").hidden) $("close").click(); });
+newGame(false);
+})();
+</script>
+
+</body>
+</html>

@@ -10,4 +10,14 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/fr/"/>
   </url>
+  <url>
+    <loc>https://guillaume-enguehard.github.io/games/doron/play/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/doron/play/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/doron/play/fr.html"/>
+  </url>
+  <url>
+    <loc>https://guillaume-enguehard.github.io/games/doron/play/fr.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/doron/play/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/doron/play/fr.html"/>
+  </url>
 </urlset>
