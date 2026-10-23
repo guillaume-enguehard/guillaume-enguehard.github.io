@@ -164,7 +164,7 @@ a:hover { text-decoration-thickness: 2px; }
 }
 .game:nth-child(even) { border-top-color: var(--ochre); }
 .game-visual {
-  width: 100%; aspect-ratio: 16 / 10; object-fit: cover;
+  width: 100%; aspect-ratio: 16 / 10; object-fit: contain;
   display: block; background: var(--paper);
   border-bottom: 1px solid var(--line);
 }
@@ -181,12 +181,12 @@ a:hover { text-decoration-thickness: 2px; }
 .game-facts div { display: flex; gap: .35rem; }
 .game-facts dt { color: var(--muted); }
 .game-facts dd { margin: 0; font-weight: 700; }
-.game-actions { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: .5rem 1.1rem; }
+.game-actions { margin-top: auto; display: flex; flex-wrap: wrap; align-items: center; gap: .4rem .9rem; }
 .game-actions .btn-primary { flex: 1 0 100%; min-height: 2.5rem; }
 /* Secondary links (rules, manual): plain underlined links, easier to fit */
 .game-actions .btn:not(.btn-primary) {
   min-height: 0; padding: .2rem 0; border: 0; border-radius: 0;
-  background: none; font-size: .95rem;
+  background: none; font-size: .9rem;
   text-decoration: underline; text-underline-offset: .2em;
 }
 .game-actions .btn:not(.btn-primary):hover { background: none; text-decoration-thickness: 2px; }
