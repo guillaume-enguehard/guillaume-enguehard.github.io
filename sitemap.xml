@@ -30,4 +30,14 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/toll/play/"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/toll/play/fr.html"/>
   </url>
+  <url>
+    <loc>https://guillaume-enguehard.github.io/games/doron/video.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/doron/video.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/doron/video-fr.html"/>
+  </url>
+  <url>
+    <loc>https://guillaume-enguehard.github.io/games/doron/video-fr.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/doron/video.html"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/doron/video-fr.html"/>
+  </url>
 </urlset>
