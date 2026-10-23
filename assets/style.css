@@ -172,7 +172,7 @@ a:hover { text-decoration-thickness: 2px; }
   display: flex; flex-direction: column; flex: 1;
   padding: .9rem 1rem 1rem;
 }
-.game h3 { font-size: 1.25rem; line-height: 1.2; margin: 0 0 .3rem; font-weight: 800; }
+.game h3 { font-size: 1.25rem; line-height: 1.2; margin: 0 0 .3rem; font-weight: 800; text-transform: uppercase; letter-spacing: .02em; }
 .game-pitch { margin: 0 0 .75rem; font-size: 1rem; line-height: 1.5; }
 .game-facts {
   display: flex; flex-wrap: wrap; gap: .2rem 1rem;
