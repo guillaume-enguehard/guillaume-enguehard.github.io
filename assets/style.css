@@ -78,14 +78,18 @@ a:hover { text-decoration-thickness: 2px; }
   color: var(--panel-ink);
 }
 .profile-inner {
+  position: relative;
   min-height: 100vh;
-  display: flex; flex-direction: column; gap: 1.75rem;
-  padding: clamp(2rem, 4vw, 3rem) clamp(1.5rem, 2.5vw, 2.25rem);
+  display: flex; flex-direction: column; gap: 1.5rem;
+  padding: clamp(1.25rem, 3vh, 2.5rem) clamp(1.5rem, 2.5vw, 2.25rem);
 }
+.profile-id { display: flex; flex-direction: column; gap: 1rem; }
 .profile a { color: var(--panel-ink); }
 
 .lang-switch {
-  align-self: flex-end;
+  position: absolute; z-index: 1;
+  top: calc(clamp(1.25rem, 3vh, 2.5rem) + .6rem);
+  right: calc(clamp(1.5rem, 2.5vw, 2.25rem) + .6rem);
   display: flex; gap: .25rem;
   font-size: .95rem; font-weight: 700;
 }
@@ -94,10 +98,13 @@ a:hover { text-decoration-thickness: 2px; }
   border: 1px solid var(--panel-line);
 }
 .lang-switch span { background: var(--panel-ink); color: var(--panel); border-color: var(--panel-ink); }
+.lang-switch a { background: color-mix(in srgb, var(--panel) 70%, transparent); }
 .lang-switch a:hover { border-color: var(--panel-muted); }
 
 .portrait {
-  width: 100%; height: auto; display: block;
+  width: 100%; display: block;
+  height: clamp(9rem, 40vh, 24rem);
+  object-fit: cover; object-position: 50% 22%;
   border-radius: 4px;
   border: 1px solid var(--panel-line);
 }
@@ -124,7 +131,7 @@ a:hover { text-decoration-thickness: 2px; }
 .profile-footer p { margin: 0; }
 
 /* Keep the panel in view while scrolling, only when it fits the screen height */
-@media (min-width: 52.01rem) and (min-height: 58rem) {
+@media (min-width: 52.01rem) and (min-height: 50rem) {
   .profile-inner { position: sticky; top: 0; }
 }
 
@@ -206,7 +213,10 @@ a:hover { text-decoration-thickness: 2px; }
     padding: 1.5rem var(--gutter) 2rem; gap: 1.25rem;
   }
   .emblem { width: 4.5rem; }
-  .portrait { max-width: 15rem; }
+  .lang-switch { position: static; align-self: flex-end; margin-bottom: -.75rem; }
+  .profile-id { flex-direction: row; align-items: center; gap: 1rem; }
+  .portrait { width: 5.5rem; height: 5.5rem; flex: none; border-radius: 50%; object-position: 50% 18%; }
+  .profile h1 { font-size: 1.75rem; }
   .profile-footer { display: none; }
   .catalog { padding-top: 2rem; }
 }
