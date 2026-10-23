@@ -1,21 +1,106 @@
 <!doctype html>
-<html lang="fr">
+<html lang="en">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Guillaume Enguehard — Créateur de jeux de société</title>
-<meta name="description" content="Portfolio de Guillaume Enguehard, auteur de jeux de société abstraits. Site en construction.">
-<style>
-  body { margin: 0; min-height: 100vh; display: grid; place-items: center;
-         font-family: Georgia, "Times New Roman", serif; background: #f6f3ee; color: #222; text-align: center; padding: 16px; }
-  h1 { font-weight: normal; font-size: 2rem; margin: 0 0 .5rem; }
-  p { color: #666; margin: 0; }
-</style>
+<title>Guillaume Enguehard — Abstract board game designer</title>
+<meta name="description" content="Abstract strategy games by Guillaume Enguehard, board game designer based in France. Play them online, read the rules, download the manuals.">
+<link rel="canonical" href="https://guillaume-enguehard.github.io/">
+<link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/">
+<link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/fr/">
+<link rel="alternate" hreflang="x-default" href="https://guillaume-enguehard.github.io/">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Guillaume Enguehard — Abstract board game designer">
+<meta property="og:description" content="Abstract strategy games: play online, read the rules, download the manuals.">
+<meta property="og:url" content="https://guillaume-enguehard.github.io/">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Atkinson+Hyperlegible+Next:wght@400;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
-  <main>
-    <h1>Guillaume Enguehard</h1>
-    <p>Créateur de jeux de société abstraits — site en construction.</p>
-  </main>
+<a class="skip" href="#main">Skip to content</a>
+
+<header class="site-header">
+  <div class="wrap">
+    <a class="brand" href="/">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="6" fill="currentColor"/><circle cx="16" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
+      Guillaume Enguehard
+    </a>
+    <nav class="site-nav" aria-label="Main">
+      <a href="#games">Games</a>
+      <a href="#about">About</a>
+      <a class="lang" href="/fr/" hreflang="fr" lang="fr" title="Version française">FR</a>
+    </nav>
+  </div>
+</header>
+
+<main id="main">
+  <div class="hero">
+    <div class="wrap">
+      <div>
+        <h1>Abstract strategy games</h1>
+        <p>Designed by Guillaume Enguehard. Short rules, deep play, no luck.</p>
+      </div>
+      <svg class="hero-board" viewBox="0 0 160 160" role="img" aria-label="A small game board with a few pieces in play">
+        <g class="grid" stroke-width="1.5">
+          <path d="M20 20H140M20 40H140M20 60H140M20 80H140M20 100H140M20 120H140M20 140H140"/>
+          <path d="M20 20V140M40 20V140M60 20V140M80 20V140M100 20V140M120 20V140M140 20V140"/>
+        </g>
+        <circle class="dark" cx="60" cy="60" r="8.5"/>
+        <circle class="dark" cx="80" cy="80" r="8.5"/>
+        <circle class="dark" cx="60" cy="100" r="8.5"/>
+        <circle class="light" cx="80" cy="60" r="8" stroke-width="1.5"/>
+        <circle class="light" cx="100" cy="80" r="8" stroke-width="1.5"/>
+        <circle class="light" cx="80" cy="100" r="8" stroke-width="1.5"/>
+        <circle class="last" cx="100" cy="100" r="8" stroke-width="2.5"/>
+      </svg>
+    </div>
+  </div>
+
+  <section id="games" aria-labelledby="games-title">
+    <div class="wrap">
+      <h2 id="games-title">Games</h2>
+      <div class="games">
+        <p class="empty">The first games will be listed here soon, each with a link to play online and its rules.</p>
+
+        <!-- Game entry template:
+        <article class="game" id="game-slug">
+          <img class="game-visual" src="/games/game-slug/cover.svg" alt="Description of the board">
+          <div>
+            <h3>Game name</h3>
+            <p class="game-pitch">One or two sentences on what the game is about.</p>
+            <dl class="game-facts">
+              <div><dt>Players</dt><dd>2</dd></div>
+              <div><dt>Length</dt><dd>20–30 min</dd></div>
+              <div><dt>Ages</dt><dd>10+</dd></div>
+            </dl>
+            <div class="game-actions">
+              <a class="btn btn-primary" href="...">Play online</a>
+              <a class="btn" href="/games/game-slug/rules.html">Read the rules</a>
+              <a class="btn" href="/games/game-slug/manual-en.pdf">Download the manual (PDF)</a>
+            </div>
+          </div>
+        </article>
+        -->
+      </div>
+    </div>
+  </section>
+
+  <section id="about" aria-labelledby="about-title">
+    <div class="wrap prose">
+      <h2 id="about-title">About</h2>
+      <p>I am a board game designer based in France. I create abstract strategy games, mostly for two players: complete information, no dice, no hidden cards, just the board and the decisions.</p>
+      <p>Each game listed here can be played online and comes with its full rules.</p>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">
+  <div class="wrap">
+    <p>© 2026 Guillaume Enguehard</p>
+  </div>
+</footer>
 </body>
 </html>

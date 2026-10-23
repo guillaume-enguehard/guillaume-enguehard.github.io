@@ -1,0 +1,204 @@
+/* Guillaume Enguehard — board game portfolio
+   Readability first: one hyperlegible family, generous size, high contrast. */
+
+:root {
+  --paper: #f6f7f9;
+  --surface: #ffffff;
+  --ink: #18202e;
+  --muted: #535c6e;
+  --line: #d6dbe3;
+  --blue: #1d4f9c;        /* player one */
+  --blue-ink: #ffffff;
+  --ochre: #b8741a;       /* player two */
+  --focus: #e0a22b;
+  --stone-dark: #18202e;
+  --stone-light: #ffffff;
+
+  --font: "Atkinson Hyperlegible Next", "Atkinson Hyperlegible", system-ui, sans-serif;
+  --measure: 66ch;
+  --wrap: 68rem;
+  --gutter: clamp(16px, 4vw, 40px);
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --paper: #12161e;
+    --surface: #1a1f2a;
+    --ink: #eef1f5;
+    --muted: #a7b0bf;
+    --line: #2f3746;
+    --blue: #7fa8ec;
+    --blue-ink: #0f1520;
+    --ochre: #e3a656;
+    --stone-dark: #56627a;
+    --stone-light: #eef1f5;
+  }
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+
+html { -webkit-text-size-adjust: 100%; }
+
+body {
+  margin: 0;
+  background: var(--paper);
+  color: var(--ink);
+  font-family: var(--font);
+  font-size: 1.125rem;
+  line-height: 1.6;
+}
+
+a { color: var(--blue); text-underline-offset: 0.18em; }
+a:hover { text-decoration-thickness: 2px; }
+
+:focus-visible {
+  outline: 3px solid var(--focus);
+  outline-offset: 3px;
+  border-radius: 2px;
+}
+
+.wrap {
+  max-width: var(--wrap);
+  margin: 0 auto;
+  padding: 0 var(--gutter);
+}
+
+.skip {
+  position: absolute; left: -999px; top: 0;
+  background: var(--surface); padding: .5rem 1rem; z-index: 10;
+}
+.skip:focus { left: 1rem; }
+
+/* Header */
+.site-header {
+  border-bottom: 1px solid var(--line);
+}
+.site-header .wrap {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 1rem; min-height: 4rem;
+}
+.brand {
+  font-weight: 700; color: var(--ink); text-decoration: none;
+  display: flex; align-items: center; gap: .6rem;
+}
+.brand svg { width: 1.6rem; height: 1.6rem; flex: none; }
+.site-nav { display: flex; align-items: center; gap: 1.25rem; font-size: 1rem; }
+.brand { white-space: nowrap; }
+@media (max-width: 26rem) { .site-nav { gap: .8rem; } .brand svg { display: none; } }
+.site-nav a { color: var(--ink); text-decoration: none; }
+.site-nav a:hover { text-decoration: underline; }
+.lang {
+  border: 1px solid var(--line); border-radius: 999px;
+  padding: .15rem .7rem; font-weight: 700;
+}
+
+/* Hero */
+.hero .wrap {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: clamp(1.5rem, 5vw, 4rem);
+  align-items: center;
+  padding-top: clamp(3rem, 9vw, 6.5rem);
+  padding-bottom: clamp(3rem, 8vw, 5.5rem);
+}
+.hero h1 {
+  font-size: clamp(2.6rem, 7vw, 4.75rem);
+  line-height: 1.02;
+  letter-spacing: -0.02em;
+  margin: 0 0 1.25rem;
+  font-weight: 800;
+}
+.hero p {
+  font-size: clamp(1.2rem, 2.2vw, 1.45rem);
+  line-height: 1.5;
+  color: var(--muted);
+  max-width: 34ch;
+  margin: 0;
+}
+.hero-board { width: clamp(9rem, 26vw, 17rem); height: auto; display: block; }
+.hero-board .grid { stroke: var(--line); }
+.hero-board .dark { fill: var(--stone-dark); }
+.hero-board .light { fill: var(--stone-light); stroke: var(--ink); }
+.hero-board .last { fill: none; stroke: var(--ochre); }
+
+@media (max-width: 40rem) {
+  .hero .wrap { grid-template-columns: 1fr; }
+  .hero-board { width: 9rem; order: -1; }
+}
+
+/* Sections */
+section { padding: clamp(2.5rem, 6vw, 4.5rem) 0; }
+section + section { border-top: 1px solid var(--line); }
+h2 {
+  font-size: clamp(1.75rem, 3.5vw, 2.25rem);
+  line-height: 1.15;
+  margin: 0 0 1.5rem;
+  font-weight: 800;
+}
+.prose { max-width: var(--measure); }
+.prose p { margin: 0 0 1em; }
+
+/* Game entries */
+.games { display: grid; gap: 2rem; }
+
+.game {
+  display: grid;
+  grid-template-columns: minmax(0, 15rem) minmax(0, 1fr);
+  gap: clamp(1.25rem, 3vw, 2.25rem);
+  align-items: start;
+  padding: clamp(1.25rem, 3vw, 2rem);
+  background: var(--surface);
+  border: 1px solid var(--line);
+  border-left: 6px solid var(--blue);
+  border-radius: 6px;
+}
+.game:nth-child(even) { border-left-color: var(--ochre); }
+.game-visual {
+  width: 100%; aspect-ratio: 1; object-fit: cover;
+  border-radius: 4px; background: var(--paper); display: block;
+}
+.game h3 { font-size: 1.6rem; line-height: 1.2; margin: 0 0 .4rem; font-weight: 800; }
+.game-pitch { margin: 0 0 1rem; max-width: var(--measure); }
+.game-facts {
+  display: flex; flex-wrap: wrap; gap: .5rem 1.75rem;
+  margin: 0 0 1.25rem; font-size: 1rem;
+}
+.game-facts div { display: flex; gap: .4rem; }
+.game-facts dt { color: var(--muted); }
+.game-facts dd { margin: 0; font-weight: 700; }
+.game-actions { display: flex; flex-wrap: wrap; gap: .75rem; }
+
+@media (max-width: 40rem) {
+  .game { grid-template-columns: 1fr; }
+  .game-visual { max-width: 15rem; }
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  min-height: 2.75rem; padding: .5rem 1.1rem;
+  border: 2px solid var(--blue); border-radius: 6px;
+  color: var(--blue); background: transparent;
+  font-weight: 700; font-size: 1rem; text-decoration: none;
+}
+.btn:hover { background: color-mix(in srgb, var(--blue) 10%, transparent); text-decoration: none; }
+.btn-primary { background: var(--blue); color: var(--blue-ink); }
+.btn-primary:hover { background: color-mix(in srgb, var(--blue) 85%, var(--ink)); }
+
+.empty {
+  padding: 1.5rem; border: 2px dashed var(--line); border-radius: 6px;
+  color: var(--muted); max-width: var(--measure); margin: 0;
+}
+
+/* Footer */
+.site-footer {
+  border-top: 1px solid var(--line);
+  padding: 2rem 0 2.5rem;
+  color: var(--muted); font-size: 1rem;
+}
+.site-footer p { margin: 0; }
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-board .last { animation: place 900ms 300ms ease-out both; }
+  @keyframes place { from { opacity: 0; } to { opacity: 1; } }
+}
