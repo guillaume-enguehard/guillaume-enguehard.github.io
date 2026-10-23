@@ -20,55 +20,46 @@
 <link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
-<a class="skip" href="#main">Skip to content</a>
+<a class="skip" href="#games">Skip to the games</a>
 
-<header class="site-header">
-  <div class="wrap">
-    <a class="brand" href="/">
-      <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="12" r="6" fill="currentColor"/><circle cx="16" cy="12" r="6" fill="none" stroke="currentColor" stroke-width="2"/></svg>
-      Guillaume Enguehard
-    </a>
-    <nav class="site-nav" aria-label="Main">
-      <a href="#games">Games</a>
-      <a href="#about">About</a>
-      <a class="lang" href="/fr/" hreflang="fr" lang="fr" title="Version française">FR</a>
-    </nav>
-  </div>
-</header>
-
-<main id="main">
-  <div class="hero">
-    <div class="wrap">
-      <div>
-        <h1>Abstract strategy games</h1>
-        <p>Designed by Guillaume Enguehard. Short rules, deep play, no luck.</p>
-      </div>
-      <svg class="hero-board" viewBox="0 0 160 160" role="img" aria-label="A small game board with a few pieces in play">
-        <g class="grid" stroke-width="1.5">
-          <path d="M20 20H140M20 40H140M20 60H140M20 80H140M20 100H140M20 120H140M20 140H140"/>
-          <path d="M20 20V140M40 20V140M60 20V140M80 20V140M100 20V140M120 20V140M140 20V140"/>
-        </g>
-        <circle class="dark" cx="60" cy="60" r="8.5"/>
-        <circle class="dark" cx="80" cy="80" r="8.5"/>
-        <circle class="dark" cx="60" cy="100" r="8.5"/>
-        <circle class="light" cx="80" cy="60" r="8" stroke-width="1.5"/>
-        <circle class="light" cx="100" cy="80" r="8" stroke-width="1.5"/>
-        <circle class="light" cx="80" cy="100" r="8" stroke-width="1.5"/>
-        <circle class="last" cx="100" cy="100" r="8" stroke-width="2.5"/>
+<div class="layout">
+  <header class="profile">
+    <div class="profile-inner">
+      <nav class="lang-switch" aria-label="Language">
+        <span aria-current="true">EN</span><a href="/fr/" hreflang="fr" lang="fr" title="Version française">FR</a>
+      </nav>
+      <svg class="emblem" viewBox="0 0 120 120" role="img" aria-label="A small game board with a few pieces in play">
+        <g class="grid" stroke-width="2"><path d="M10 10H110M10 30H110M10 50H110M10 70H110M10 90H110M10 110H110"/><path d="M10 10V110M30 10V110M50 10V110M70 10V110M90 10V110M110 10V110"/></g>
+        <circle class="dark" cx="30" cy="50" r="8"/><circle class="dark" cx="50" cy="70" r="8"/><circle class="dark" cx="50" cy="30" r="8"/>
+        <circle class="light" cx="70" cy="50" r="8"/><circle class="light" cx="70" cy="90" r="8"/><circle class="light" cx="90" cy="70" r="8"/>
       </svg>
+      <div>
+        <h1>Guillaume Enguehard</h1>
+        <p class="role">Abstract board game designer</p>
+      </div>
+      <div class="bio">
+        <p>I design abstract strategy games, mostly for two players: everything is on the board, nothing is left to chance, and the rules stay short.</p>
+        <p>Each game here can be played online, and comes with its full rules and a printable manual.</p>
+      </div>
+      <div class="profile-footer">
+        <p>Based in France</p>
+        <p>© 2026 Guillaume Enguehard</p>
+      </div>
     </div>
-  </div>
+  </header>
 
-  <section id="games" aria-labelledby="games-title">
-    <div class="wrap">
-      <h2 id="games-title">Games</h2>
+  <main id="main" class="catalog">
+    <section id="games" aria-labelledby="games-title">
+      <div class="catalog-head">
+        <h2 id="games-title">Games</h2>
+      </div>
       <div class="games">
         <p class="empty">The first games will be listed here soon, each with a link to play online and its rules.</p>
 
         <!-- Game entry template:
         <article class="game" id="game-slug">
           <img class="game-visual" src="/games/game-slug/cover.svg" alt="Description of the board">
-          <div>
+          <div class="game-body">
             <h3>Game name</h3>
             <p class="game-pitch">One or two sentences on what the game is about.</p>
             <dl class="game-facts">
@@ -78,29 +69,19 @@
             </dl>
             <div class="game-actions">
               <a class="btn btn-primary" href="...">Play online</a>
-              <a class="btn" href="/games/game-slug/rules.html">Read the rules</a>
-              <a class="btn" href="/games/game-slug/manual-en.pdf">Download the manual (PDF)</a>
+              <a class="btn" href="/games/game-slug/rules.html">Rules</a>
+              <a class="btn" href="/games/game-slug/manual-en.pdf">Manual (PDF)</a>
             </div>
           </div>
         </article>
         -->
       </div>
-    </div>
-  </section>
+    </section>
+  </main>
+</div>
 
-  <section id="about" aria-labelledby="about-title">
-    <div class="wrap prose">
-      <h2 id="about-title">About</h2>
-      <p>I am a board game designer based in France. I create abstract strategy games, mostly for two players: complete information, no dice, no hidden cards, just the board and the decisions.</p>
-      <p>Each game listed here can be played online and comes with its full rules.</p>
-    </div>
-  </section>
-</main>
-
-<footer class="site-footer">
-  <div class="wrap">
-    <p>© 2026 Guillaume Enguehard</p>
-  </div>
+<footer class="page-footer">
+  <p>Based in France · © 2026 Guillaume Enguehard</p>
 </footer>
 </body>
 </html>
