@@ -1,0 +1,458 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Jouez à Toll en ligne contre l'ordinateur ou à deux : posez vos pions, prenez en diagonale, tenez le plus de routes.">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://guillaume-enguehard.github.io/games/toll/play/fr.html">
+<link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/toll/play/">
+<link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/toll/play/fr.html">
+<title>Toll · Jouer en ligne</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Spectral+SC:wght@500;600&family=Spectral:wght@400;500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Toll — un bloc de bois posé sur la table ; au bout de chaque route, hors du plateau, un point à la couleur du camp qui la tient.
+   Mise en page : une seule fenêtre ; le plateau occupe l'espace carré disponible, le pupitre à côté (dessous en portrait). */
+:root{
+  --table:#e3e4de; --panel:#f1f1ec; --ink:#232220; --muted:#666259; --rule:#cfcfc6;
+  --wood:#cfa874; --wood-deep:#b88f5c; --wood-edge:#9a7447; --groove:#6e4f2c; --groove-fine:#8c6a43;
+  --maple:#efe3c9; --maple-edge:#c4ab84; --walnut:#4b3324; --walnut-edge:#2d1e14;
+  --hole:#5d4228; --accent:#8a3324; --accent-soft:#ecd7cf;
+  --f-display:"Spectral SC","Spectral",Georgia,"Times New Roman",serif;
+  --f-body:"IBM Plex Sans","Segoe UI",system-ui,sans-serif;
+  --f-mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --table:#161716; --panel:#1f201e; --ink:#e9e6df; --muted:#a7a196; --rule:#34332f;
+  --wood:#a07a4b; --wood-deep:#8d6a3f; --wood-edge:#6d5030; --groove:#3a2814; --groove-fine:#4d361e;
+  --maple:#eadcc0; --maple-edge:#b59c76; --walnut:#3a271b; --walnut-edge:#140c07;
+  --hole:#3a2916; --accent:#d9735c; --accent-soft:#3d241e; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --table:#161716; --panel:#1f201e; --ink:#e9e6df; --muted:#a7a196; --rule:#34332f;
+  --wood:#a07a4b; --wood-deep:#8d6a3f; --wood-edge:#6d5030; --groove:#3a2814; --groove-fine:#4d361e;
+  --maple:#eadcc0; --maple-edge:#b59c76; --walnut:#3a271b; --walnut-edge:#140c07;
+  --hole:#3a2916; --accent:#d9735c; --accent-soft:#3d241e; color-scheme:dark}
+*{box-sizing:border-box}
+[hidden]{display:none!important}
+html,body{height:100%}
+body{margin:0;background:var(--table);color:var(--ink);font-family:var(--f-body);font-size:15px;overflow:hidden;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:12px}
+.app{height:100%;display:grid;grid-template-columns:minmax(0,1fr) 320px;grid-template-rows:minmax(0,1fr);gap:24px}
+.app>.stage{grid-column:1;grid-row:1}
+.app>.panel{grid-column:2;grid-row:1}
+.stage{min-width:0;min-height:0;display:grid;place-items:center;position:relative}
+.panel{min-height:0;display:flex;flex-direction:column;gap:12px;overflow:hidden}
+h1{font-family:var(--f-display);font-weight:600;font-size:2.6rem;letter-spacing:.14em;margin:0;line-height:1}
+.sub{color:var(--muted);font-size:.85rem;margin:4px 0 0}
+.card{background:var(--panel);border:1px solid var(--rule);border-radius:8px;padding:10px 12px;display:flex;flex-direction:column;gap:8px}
+.label{font-size:.7rem;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:600}
+/* état du tour */
+.turn{display:flex;align-items:center;gap:10px;font-weight:600}
+.turn .msg{font-weight:500;color:var(--muted);font-size:.85rem}
+.disc{width:20px;height:20px;border-radius:50%;flex:none;border:1.5px solid}
+.disc.w{background:var(--maple);border-color:var(--maple-edge)} .disc.b{background:var(--walnut);border-color:var(--walnut-edge)}
+/* joueurs */
+.players{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.pl{display:flex;flex-direction:column;gap:4px;padding:6px 8px;border-radius:8px;border:1px solid transparent}
+.pl.active{border-color:var(--accent);background:var(--accent-soft)}
+.pl .name{display:flex;align-items:center;gap:6px;font-weight:600}
+.score{display:flex;align-items:baseline;gap:6px;font-family:var(--f-display);font-weight:600;font-size:1.5rem}
+.score small{font-family:var(--f-body);font-size:.75rem;font-weight:500;color:var(--muted)}
+.nums{font-family:var(--f-mono);font-variant-numeric:tabular-nums;font-size:.76rem;color:var(--muted);display:flex;flex-direction:column;gap:1px}
+.nums b{color:var(--ink);font-weight:500}
+.btns{display:flex;flex-wrap:wrap;gap:8px}
+button,select{font:inherit;font-size:.85rem;border-radius:6px;border:1px solid var(--rule);background:var(--panel);color:var(--ink);padding:6px 10px;cursor:pointer}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff;font-weight:600}
+button:disabled{opacity:.45;cursor:default}
+button:focus-visible,select:focus-visible,.cell:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.row2{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:8px}
+.row2 select{width:100%;min-width:0}
+.row2 label{display:flex;flex-direction:column;gap:3px;font-size:.72rem;color:var(--muted)}
+.row2[hidden],.btns[hidden]{display:none}
+#autoRow{margin-top:8px}#autoBtns{margin-top:8px}
+.dock{display:flex;flex-direction:column;gap:12px;min-height:0;flex:1}
+.rules.card{min-height:0;overflow:auto}
+.rules ol{margin:0;padding-left:1.1rem;display:flex;flex-direction:column;gap:4px;font-size:.78rem;line-height:1.35}
+.rules b{font-weight:600}
+/* le bloc de bois (plateau seul) et les repères des routes, hors du plateau */
+.boardwrap{display:grid;grid-template-columns:var(--coord) calc(var(--cell)*9) var(--chip);grid-template-rows:var(--chip) calc(var(--cell)*9) var(--coord);gap:0;position:relative}
+.block{grid-column:2;grid-row:2;margin:calc(var(--cell)*-.22);border-radius:calc(var(--cell)*.14);
+  background:linear-gradient(170deg,var(--wood) 0%,var(--wood-deep) 100%);box-shadow:inset 0 0 0 1px var(--wood-edge),0 3px 0 var(--wood-edge),0 10px 24px rgba(0,0,0,.22)}
+.board{grid-column:2;grid-row:2;display:grid;grid-template-columns:repeat(9,var(--cell));grid-template-rows:repeat(9,var(--cell));position:relative}
+.cell{position:relative;z-index:1;border:0;padding:0;margin:0;background:transparent;cursor:pointer;border-radius:0}
+.gridlines{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.gridlines line{stroke:var(--groove);stroke-width:2.2;vector-effect:non-scaling-stroke;stroke-linecap:round;opacity:.85}
+.gridlines line.diag{stroke:var(--groove-fine);stroke-width:.8;opacity:.7}
+.gridlines circle{fill:var(--groove)}
+.cell.hl{background:color-mix(in srgb,var(--accent) 16%,transparent)}
+.stone{position:absolute;inset:8%;border-radius:50%;z-index:2;border:1.5px solid;transition:transform .15s ease}
+.stone.w{background:radial-gradient(circle at 38% 32%,color-mix(in srgb,var(--maple) 70%,#fff),var(--maple) 60%);border-color:var(--maple-edge);box-shadow:0 2px 2px rgba(0,0,0,.25)}
+.stone.b{background:radial-gradient(circle at 38% 32%,color-mix(in srgb,var(--walnut) 75%,#fff),var(--walnut) 62%);border-color:var(--walnut-edge);box-shadow:0 2px 2px rgba(0,0,0,.3)}
+.stone.last{box-shadow:0 0 0 3px var(--accent)}
+.stone.target{animation:pulse 1s ease-in-out infinite;box-shadow:0 0 0 4px var(--accent)}
+.stone.ghost{opacity:.45;box-shadow:none}
+.dot{position:absolute;inset:38%;border-radius:50%;background:var(--accent);z-index:3;opacity:.9}
+.gone{position:absolute;inset:30%;z-index:1;border:2px dashed var(--accent);border-radius:50%;opacity:.7}
+@keyframes pulse{50%{box-shadow:0 0 0 7px var(--accent)}}
+@media (prefers-reduced-motion:reduce){.stone.target{animation:none}.stone{transition:none}}
+.coords-l{grid-column:1;grid-row:2;display:grid;grid-template-rows:repeat(9,var(--cell));padding-right:calc(var(--cell)*.22)}
+.coords-b{grid-column:2;grid-row:3;display:grid;grid-template-columns:repeat(9,var(--cell));padding-top:calc(var(--cell)*.22)}
+.coords-l span,.coords-b span{display:grid;place-items:center;font-family:var(--f-mono);font-size:calc(var(--cell)*.22);color:var(--muted)}
+.chips-r{grid-column:3;grid-row:2;display:grid;grid-template-rows:repeat(9,var(--cell));position:relative;padding-left:calc(var(--cell)*.3)}
+.chips-t{grid-column:2;grid-row:1;display:grid;grid-template-columns:repeat(9,var(--cell));position:relative;padding-bottom:calc(var(--cell)*.3)}
+.toll{display:flex;align-items:center;justify-content:center;gap:3px}
+.chips-t .toll{flex-direction:column-reverse}
+.chips-r .toll{flex-direction:row}
+.mark{width:calc(var(--cell)*.3);height:calc(var(--cell)*.3);border-radius:50%;flex:none;border:1.5px solid var(--rule);background:transparent;transition:background .2s,border-color .2s}
+.toll.W .mark{background:var(--maple);border-color:var(--maple-edge)}
+.toll.B .mark{background:var(--walnut);border-color:var(--walnut-edge);outline:1px solid color-mix(in srgb,var(--ink) 35%,transparent);outline-offset:0}
+.toll small{font-family:var(--f-mono);font-size:calc(var(--cell)*.17);font-variant-numeric:tabular-nums;color:var(--muted);line-height:1}
+.chips-r .toll small{writing-mode:horizontal-tb}
+/* bandeau de fin */
+.overlay{position:absolute;inset:0;display:grid;place-items:center;z-index:5;pointer-events:none}
+.endcard{pointer-events:auto;background:var(--panel);border:1px solid var(--rule);border-radius:10px;padding:16px 20px;box-shadow:0 10px 40px rgba(0,0,0,.25);display:flex;flex-direction:column;gap:8px;align-items:flex-start;max-width:90%}
+.endcard h2{font-family:var(--f-display);font-weight:600;font-size:1.6rem;margin:0;letter-spacing:.04em}
+.rulesdlg{position:fixed;inset:0;background:color-mix(in srgb,var(--table) 70%,transparent);display:grid;place-items:center;z-index:20;padding:16px}
+.rulesdlg .card{max-width:420px}
+.only-narrow{display:none}
+@media (max-width:760px),(max-aspect-ratio:1/1){
+  .app{grid-template-columns:minmax(0,1fr);grid-template-rows:auto minmax(0,1fr) auto;gap:8px}
+  .panel{display:contents}
+  .head{grid-row:1;display:flex;align-items:baseline;justify-content:space-between;gap:8px}
+  h1{font-size:1.7rem} .sub{display:none}
+  .app>.stage{grid-column:1;grid-row:2}
+  .dock{grid-row:3;display:flex;flex-direction:column;gap:8px}
+  .rules.card{display:none} .only-narrow{display:inline-block}
+  .card{padding:8px 10px;gap:6px}
+  .score{font-size:1.2rem}
+}
+</style>
+
+<div class="app">
+  <div class="panel">
+    <div class="head">
+      <div><h1>Toll</h1><p class="sub">Tenir les routes · 9 × 9 · 40 pions chacun</p></div>
+      <button class="only-narrow" id="btnRules" type="button">Règles</button>
+    </div>
+    <div class="dock">
+      <div class="card">
+        <div class="turn" id="turn"><span class="disc w" id="turnDisc"></span><span id="turnText">Blanc pose un pion</span></div>
+        <div class="turn"><span class="msg" id="turnMsg">Cliquez une case vide.</span></div>
+        <div class="btns" id="removeBtns" hidden><button class="primary" id="btnPass" type="button">Ne rien prendre</button></div>
+      </div>
+      <div class="card">
+        <div class="players">
+          <div class="pl" id="plW"><div class="name"><span class="disc w"></span>Blanc</div>
+            <div class="score"><span id="linesW">0</span><small>routes</small></div>
+            <div class="nums"><span>réserve <b id="resW">40</b></span><span>posés <b id="onW">0</b></span><span>pris <b id="lostW">0</b></span></div></div>
+          <div class="pl" id="plB"><div class="name"><span class="disc b"></span>Noir</div>
+            <div class="score"><span id="linesB">0</span><small>routes</small></div>
+            <div class="nums"><span>réserve <b id="resB">40</b></span><span>posés <b id="onB">0</b></span><span>pris <b id="lostB">0</b></span></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <div class="row2">
+          <label for="mode">Mode<select id="mode"><option value="hh">Deux joueurs</option><option value="aiB" selected>Ordinateur joue Noir</option><option value="aiW">Ordinateur joue Blanc</option><option value="aa">Automatique</option></select></label>
+          <label for="level"><span id="levelLab">Niveau</span><select id="level"><option value="1">Débutant</option><option value="2" selected>Moyen</option><option value="3">Fort</option><option value="4">Expert</option></select></label>
+        </div>
+        <div class="row2" id="autoRow" hidden>
+          <label for="level2">Niveau Noir<select id="level2"><option value="1">Débutant</option><option value="2" selected>Moyen</option><option value="3">Fort</option><option value="4">Expert</option></select></label>
+          <label for="speed">Vitesse<select id="speed"><option value="1400">Lente</option><option value="600" selected>Normale</option><option value="120">Rapide</option></select></label>
+        </div>
+        <div class="btns" id="autoBtns" hidden><button class="primary" id="btnPause" type="button">Pause</button><button id="btnStep" type="button">Coup suivant</button></div>
+        <div class="btns"><button id="btnUndo" type="button">Annuler le coup</button><button id="btnNew" type="button">Nouvelle partie</button></div>
+      </div>
+      <div class="card rules" id="rulesCard">
+        <span class="label">Règles</span>
+        <ol>
+          <li><b>Poser</b> un pion de sa réserve sur une case vide.</li>
+          <li><b>Prendre, si on veut,</b> le premier pion rencontré depuis le pion posé le long d'une des <b>deux diagonales</b>, s'il est adverse et si l'on avait <b>déjà</b> plus de pions que l'adversaire sur cette diagonale avant la pose. Vos pions font écran ; une seule prise par tour ; le pion pris est retiré définitivement.</li>
+          <li><b>Fin</b> quand les deux réserves sont vides. Les 18 <b>routes</b> (9 rangées, 9 colonnes) reviennent chacune au camp qui y a le plus de pions ; les diagonales ne comptent pas. Le plus de routes gagne ; à égalité, le plus de pions sur le plateau.</li>
+        </ol>
+        <span class="sub">Hors du plateau, au bout de chaque route : un point à la couleur du camp qui la tient, et le compte des pions Blanc · Noir.</span>
+      </div>
+    </div>
+  </div>
+  <div class="stage" id="stage">
+    <div class="boardwrap" id="boardwrap">
+      <div class="block" aria-hidden="true"></div>
+      <div class="chips-t" id="chipsT"></div>
+      <div class="coords-l" id="coordsL"></div>
+      <div class="board" id="board" role="grid" aria-label="Plateau 9 par 9"></div>
+      <div class="chips-r" id="chipsR"></div>
+      <div class="coords-b" id="coordsB"></div>
+    </div>
+    <div class="overlay" id="overlay" hidden><div class="endcard"><span class="label">Partie terminée</span><h2 id="endTitle"></h2><span id="endText" class="sub"></span><button class="primary" id="btnAgain" type="button">Rejouer</button></div></div>
+  </div>
+</div>
+<div class="rulesdlg" id="rulesDlg" hidden><div class="card rules"><span class="label">Règles</span><ol id="rulesCopy"></ol><button id="btnCloseRules" type="button">Fermer</button></div></div>
+
+<script type="text/plain" id="core">
+// ---------- règles (partagées entre la page et le calcul de l'ordinateur) ----------
+var N = 9, R0 = 40, NC = N * N;
+var LID = [], LCELLS = [], NL = 0;
+(function () {
+  var add = function (cells) { LCELLS.push(cells); return NL++; };
+  for (var s = 0; s < NC; s++) LID.push([0, 0, 0, 0]);
+  for (var r = 0; r < N; r++) { var c1 = []; for (var c = 0; c < N; c++) c1.push(r * N + c); var L = add(c1); c1.forEach(function (x) { LID[x][0] = L; }); }
+  for (var c = 0; c < N; c++) { var c2 = []; for (var r = 0; r < N; r++) c2.push(r * N + c); var L2 = add(c2); c2.forEach(function (x) { LID[x][1] = L2; }); }
+  for (var k = -(N - 1); k <= N - 1; k++) { var c3 = []; for (var r = 0; r < N; r++) { var c = r - k; if (c >= 0 && c < N) c3.push(r * N + c); } var L3 = add(c3); c3.forEach(function (x) { LID[x][2] = L3; }); }
+  for (var k2 = 0; k2 <= 2 * (N - 1); k2++) { var c4 = []; for (var r = 0; r < N; r++) { var c = k2 - r; if (c >= 0 && c < N) c4.push(r * N + c); } var L4 = add(c4); c4.forEach(function (x) { LID[x][3] = L4; }); }
+})();
+var AXD = [[0, 1], [1, 0], [1, 1], [1, -1]];   // (dr, dc) de chaque axe : rangée, colonne, diagonale, anti-diagonale
+function newState() { var b = new Int8Array(NC); b.fill(-1); return { b: b, cnt: new Int16Array(NL * 2), res: [R0, R0], np: [0, 0], lost: [0, 0], p: 0, ply: 0 }; }
+function clone(st) { return { b: st.b.slice(), cnt: st.cnt.slice(), res: st.res.slice(), np: st.np.slice(), lost: st.lost.slice(), p: st.p, ply: st.ply }; }
+function put(st, s, who) { st.b[s] = who; st.np[who]++; for (var a = 0; a < 4; a++) st.cnt[LID[s][a] * 2 + who]++; }
+function rem(st, s) { var who = st.b[s]; st.b[s] = -1; st.np[who]--; st.lost[who]++; for (var a = 0; a < 4; a++) st.cnt[LID[s][a] * 2 + who]--; }
+// pions que poser en s permettrait de prendre : le long des deux diagonales seulement,
+// premier pion rencontré, et il faut déjà être strictement plus fort sur cette diagonale avant la pose
+function targets(st, s, p) {
+  var out = [], q = 1 - p, r0 = (s / N) | 0, c0 = s % N;
+  for (var a = 2; a < 4; a++) {
+    var L = LID[s][a], mine = st.cnt[L * 2 + p], opp = st.cnt[L * 2 + q];
+    if (opp === 0 || !(mine > opp)) continue;
+    for (var sg = -1; sg <= 1; sg += 2) {
+      var dr = AXD[a][0] * sg, dc = AXD[a][1] * sg, rr = r0 + dr, cc = c0 + dc;
+      while (rr >= 0 && rr < N && cc >= 0 && cc < N) { var u = rr * N + cc; if (st.b[u] >= 0) { if (st.b[u] === q) out.push(u); break; } rr += dr; cc += dc; }
+    }
+  }
+  return out;
+}
+function genMoves(st) {
+  var mv = [];
+  if (st.res[st.p] === 0) return [{ s: -2, t: -1 }];
+  for (var s = 0; s < NC; s++) if (st.b[s] < 0) { mv.push({ s: s, t: -1 }); var tg = targets(st, s, st.p); for (var i = 0; i < tg.length; i++) mv.push({ s: s, t: tg[i] }); }
+  return mv;
+}
+function apply(st, m) {
+  if (m.s >= 0) { put(st, m.s, st.p); st.res[st.p]--; if (m.t >= 0) rem(st, m.t); }
+  st.p = 1 - st.p; st.ply++;
+}
+function lineOwners(st) { var o = []; for (var L = 0; L < 2 * N; L++) { var w = st.cnt[L * 2], k = st.cnt[L * 2 + 1]; o.push(w > k ? 0 : (k > w ? 1 : -1)); } return o; }
+function linesDiff(st) { var d = 0; for (var L = 0; L < 2 * N; L++) { var w = st.cnt[L * 2], k = st.cnt[L * 2 + 1]; d += (w > k) - (k > w); } return d; }
+function isOver(st) { return (st.res[0] === 0 && st.res[1] === 0) || st.np[0] + st.np[1] === NC; }
+function winner(st) { var d = linesDiff(st); if (d === 0) d = st.np[0] - st.np[1]; return d > 0 ? 0 : (d < 0 ? 1 : -1); }
+// ---------- ordinateur : alpha-bêta, même évaluation que le moteur de simulation (style w160v0g40c30) ----------
+// lignes ×100, pions sur le plateau ×160, diagonales où l'on est plus fort ×40, centralité ×30/4
+var WIN = 100000, H = (N - 1) / 2, RING = [];
+for (var s0 = 0; s0 < NC; s0++) { var rr0 = (s0 / N) | 0, cc0 = s0 % N; RING.push(H - Math.max(Math.abs(rr0 - H), Math.abs(cc0 - H))); }
+function evaluate(st) {
+  var me = st.p, op = 1 - me, d = linesDiff(st), e = 100 * (me === 0 ? d : -d) + 160 * (st.np[me] - st.np[op]);
+  var cen = 0; for (var s = 0; s < NC; s++) { var v = st.b[s]; if (v === me) cen += RING[s]; else if (v === op) cen -= RING[s]; }
+  var g = 0; for (var L = 2 * N; L < NL; L++) { if (LCELLS[L].length < 2) continue; var a = st.cnt[L * 2 + me], b = st.cnt[L * 2 + op]; g += (a > b) - (b > a); }
+  return e + ((30 * cen / 4) | 0) + 40 * g;
+}
+function ab(st, depth, alpha, beta) {
+  if (isOver(st)) { var w = winner(st); return w < 0 ? 0 : (w === st.p ? WIN - st.ply : -WIN + st.ply); }
+  if (depth <= 0) return evaluate(st);
+  var mv = genMoves(st); mv.sort(function (x, y) { return (y.t >= 0) - (x.t >= 0); });
+  var best = -2 * WIN;
+  for (var i = 0; i < mv.length; i++) { var q = clone(st); apply(q, mv[i]); var v = -ab(q, depth - 1, -beta, -alpha); if (v > best) best = v; if (v > alpha) alpha = v; if (alpha >= beta) break; }
+  return best;
+}
+function bestMove(st, depth) {   // choisit au hasard parmi les coups dont le score exact est à 5 près du meilleur
+  var mv = genMoves(st), sc = [], best = -3 * WIN;
+  for (var i = mv.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var x = mv[i]; mv[i] = mv[j]; mv[j] = x; }
+  if (depth >= 3) {   // tri préalable à faible profondeur, puis recherche à fenêtre (mêmes candidats, plus rapide)
+    var pre = mv.map(function (m) { var q = clone(st); apply(q, m); return -ab(q, depth - 3, -2 * WIN, 2 * WIN); });
+    var idx = mv.map(function (_, k) { return k; }).sort(function (x, y) { return pre[y] - pre[x]; }); mv = idx.map(function (k) { return mv[k]; });
+  }
+  for (var i2 = 0; i2 < mv.length; i2++) { var q2 = clone(st); apply(q2, mv[i2]); var alpha = best <= -2 * WIN ? -2 * WIN : best - 6;
+    var v = -ab(q2, depth - 1, -2 * WIN, -alpha); sc.push(v <= alpha ? -3 * WIN : v); if (sc[i2] > best) best = sc[i2]; }
+  var cand = []; for (var k = 0; k < mv.length; k++) if (sc[k] >= best - 5) cand.push(mv[k]);
+  return cand[Math.floor(Math.random() * cand.length)];
+}
+</script>
+
+<script>
+(function () {
+  var coreSrc = document.getElementById('core').textContent;
+  var K = new Function(coreSrc + '; return {N:N,NC:NC,newState:newState,clone:clone,targets:targets,apply:apply,lineOwners:lineOwners,isOver:isOver,winner:winner,LID:LID};')();
+  var worker = null;
+  try { worker = new Worker(URL.createObjectURL(new Blob([coreSrc + '\nonmessage=function(e){var d=e.data;var st={b:Int8Array.from(d.b),cnt:Int16Array.from(d.cnt),res:d.res,np:d.np,lost:d.lost,p:d.p,ply:d.ply};postMessage({id:d.id,m:bestMove(st,d.depth)});};'], { type: 'text/javascript' }))); } catch (e) { worker = null; }
+  var aiFallback = new Function(coreSrc + '; return bestMove;')();
+
+  var $ = function (id) { return document.getElementById(id); };
+  var N = K.N, LETTERS = 'abcdefghi';
+  var st, phase, placed, tgts, history, lastRemoved, aiBusy = false, aiReq = 0, hover = -1, paused = false, stepOnce = false;
+  var cells = [];
+
+  // lignes du plateau : rangées, colonnes et diagonales, tracées d'un sommet extrême à l'autre (rien ne dépasse)
+  (function () {
+    var NS = 'http://www.w3.org/2000/svg', svg = document.createElementNS(NS, 'svg'), lo = 0.5, hi = N - 0.5;
+    svg.setAttribute('class', 'gridlines'); svg.setAttribute('viewBox', '0 0 ' + N + ' ' + N); svg.setAttribute('preserveAspectRatio', 'none'); svg.setAttribute('aria-hidden', 'true');
+    var seg = function (x1, y1, x2, y2, cls) { var l = document.createElementNS(NS, 'line'); l.setAttribute('x1', x1); l.setAttribute('y1', y1); l.setAttribute('x2', x2); l.setAttribute('y2', y2); if (cls) l.setAttribute('class', cls); svg.appendChild(l); };
+    for (var i = 0; i < N; i++) { seg(lo, i + .5, hi, i + .5); seg(i + .5, lo, i + .5, hi); }
+    for (var k = -(N - 2); k <= N - 2; k++) {          // diagonales d'au moins deux sommets
+      var a = Math.max(0, k), b = Math.min(N - 1, N - 1 + k);   // colonnes x = y + k
+      seg(a + .5, a - k + .5, b + .5, b - k + .5, 'diag');
+      seg(a + .5, (N - 1) - (a - k) + .5, b + .5, (N - 1) - (b - k) + .5, 'diag');
+    }
+    var ctr = document.createElementNS(NS, 'circle'); ctr.setAttribute('cx', N / 2); ctr.setAttribute('cy', N / 2); ctr.setAttribute('r', .07); svg.appendChild(ctr);
+    $('board').appendChild(svg);
+  })();
+  // construction du plateau (rangée 9 en haut)
+  for (var r = N - 1; r >= 0; r--) for (var c = 0; c < N; c++) {
+    var s = r * N + c, b = document.createElement('button');
+    b.className = 'cell'; b.type = 'button'; b.dataset.s = s; b.setAttribute('aria-label', LETTERS[c] + (r + 1));
+    $('board').appendChild(b); cells[s] = b;
+  }
+  for (var r2 = N - 1; r2 >= 0; r2--) { var sp = document.createElement('span'); sp.textContent = r2 + 1; $('coordsL').appendChild(sp); var ch = document.createElement('div'); ch.className = 'toll'; ch.id = 'row' + r2; ch.innerHTML = '<span class="mark"></span><small></small>'; $('chipsR').appendChild(ch); }
+  for (var c2 = 0; c2 < N; c2++) { var sp2 = document.createElement('span'); sp2.textContent = LETTERS[c2]; $('coordsB').appendChild(sp2); var ch2 = document.createElement('div'); ch2.className = 'toll'; ch2.id = 'col' + c2; ch2.innerHTML = '<span class="mark"></span><small></small>'; $('chipsT').appendChild(ch2); }
+  $('rulesCopy').innerHTML = document.querySelector('#rulesCard ol').innerHTML;
+
+  function fit() {
+    var stage = $('stage'), w = stage.clientWidth, h = stage.clientHeight;
+    var cell = Math.floor(Math.min(w / 10.6, h / 10.6));
+    cell = Math.max(22, cell);
+    var wrap = $('boardwrap');
+    wrap.style.setProperty('--cell', cell + 'px'); wrap.style.setProperty('--chip', Math.round(cell * .9) + 'px'); wrap.style.setProperty('--coord', Math.round(cell * .45) + 'px');
+  }
+  window.addEventListener('resize', fit);
+
+  function aiSide() { var m = $('mode').value; return m === 'aiB' ? 1 : (m === 'aiW' ? 0 : -1); }
+  function isAuto() { return $('mode').value === 'aa'; }
+  function isAI(p) { return isAuto() || p === aiSide(); }
+  function aiDepth(p) { return +(isAuto() && p === 1 ? $('level2').value : $('level').value); }
+  function syncControls() {
+    var a = isAuto();
+    $('autoRow').hidden = !a; $('autoBtns').hidden = !a;
+    $('levelLab').textContent = a ? 'Niveau Blanc' : 'Niveau';
+    $('btnPause').textContent = paused ? 'Reprendre' : 'Pause'; $('btnPause').disabled = K.isOver(st);
+    $('btnStep').disabled = !paused || aiBusy || K.isOver(st);
+  }
+  function name(p) { return p === 0 ? 'Blanc' : 'Noir'; }
+
+  function newGame() {
+    st = K.newState(); phase = 'place'; placed = -1; tgts = []; history = []; lastRemoved = -1; aiReq++; aiBusy = false; paused = false; stepOnce = false;
+    $('overlay').hidden = true; render(); maybeAI();
+  }
+
+  function render() {
+    var owners = K.lineOwners(st), lw = 0, lb = 0;
+    for (var L = 0; L < 2 * N; L++) {
+      var chip = L < N ? $('row' + L) : $('col' + (L - N)), w = st.cnt[L * 2], k = st.cnt[L * 2 + 1];
+      chip.className = 'toll' + (owners[L] === 0 ? ' W' : owners[L] === 1 ? ' B' : '');
+      chip.lastChild.textContent = w + '·' + k;
+      chip.title = (L < N ? 'Rangée ' + (L + 1) : 'Colonne ' + LETTERS[L - N]) + ' : Blanc ' + w + ', Noir ' + k + (owners[L] === 0 ? ' — tenue par Blanc' : owners[L] === 1 ? ' — tenue par Noir' : ' — libre');
+      if (owners[L] === 0) lw++; else if (owners[L] === 1) lb++;
+    }
+    var human = !isAI(st.p);
+    var preview = (phase === 'place' && hover >= 0 && st.b[hover] < 0 && !aiBusy && human) ? K.targets(st, hover, st.p) : [];
+    for (var s = 0; s < K.NC; s++) {
+      var el = cells[s], html = '', v = st.b[s];
+      if (v >= 0) {
+        var cls = 'stone ' + (v === 0 ? 'w' : 'b');
+        if (s === placed || (phase === 'place' && history.length && history[history.length - 1].move.s === s)) cls += ' last';
+        if (phase === 'remove' && tgts.indexOf(s) >= 0) cls += ' target';
+        html = '<span class="' + cls + '"></span>';
+        if (preview.indexOf(s) >= 0) html += '<span class="dot"></span>';
+      } else if (s === hover && phase === 'place' && !aiBusy && human && !K.isOver(st)) html = '<span class="stone ' + (st.p === 0 ? 'w' : 'b') + ' ghost"></span>';
+      else if (s === lastRemoved && phase === 'place') html = '<span class="gone"></span>';
+      el.innerHTML = html;
+      el.setAttribute('aria-label', LETTERS[s % N] + ((s / N | 0) + 1) + (v === 0 ? ' Blanc' : v === 1 ? ' Noir' : ' vide') + (phase === 'remove' && tgts.indexOf(s) >= 0 ? ', prenable' : ''));
+    }
+    $('linesW').textContent = lw; $('linesB').textContent = lb;
+    $('resW').textContent = st.res[0]; $('resB').textContent = st.res[1];
+    $('onW').textContent = st.np[0]; $('onB').textContent = st.np[1];
+    $('lostW').textContent = st.lost[0]; $('lostB').textContent = st.lost[1];
+    $('plW').classList.toggle('active', st.p === 0 && !K.isOver(st)); $('plB').classList.toggle('active', st.p === 1 && !K.isOver(st));
+    $('turnDisc').className = 'disc ' + (st.p === 0 ? 'w' : 'b');
+    var who = name(st.p);
+    if (K.isOver(st)) { $('turnText').textContent = 'Partie terminée'; $('turnMsg').textContent = ''; }
+    else if (aiBusy) { $('turnText').textContent = who + ' réfléchit…'; $('turnMsg').textContent = isAuto() ? 'Partie automatique — demi-coup ' + (st.ply + 1) + ' sur 80.' : 'L\'ordinateur calcule son coup.'; }
+    else if (isAuto()) { $('turnText').textContent = paused ? 'Partie en pause' : who + ' va jouer'; $('turnMsg').textContent = paused ? 'Reprenez, ou avancez coup par coup.' : 'Partie automatique — demi-coup ' + (st.ply + 1) + ' sur 80.'; }
+    else if (phase === 'remove') { $('turnText').textContent = who + ' peut prendre un pion'; $('turnMsg').textContent = 'Cliquez un pion cerclé, ou ne prenez rien.'; }
+    else { $('turnText').textContent = who + ' pose un pion'; $('turnMsg').textContent = 'Cliquez un point libre. Au survol, une marque rouge signale chaque pion que la pose permettrait de prendre.'; }
+    $('removeBtns').hidden = !(phase === 'remove' && !aiBusy);
+    $('btnUndo').disabled = history.length === 0 || aiBusy;
+    syncControls();
+    if (K.isOver(st)) showEnd(lw, lb);
+  }
+
+  function showEnd(lw, lb) {
+    var w = K.winner(st);
+    $('endTitle').textContent = w < 0 ? 'Partie nulle' : name(w) + ' gagne';
+    $('endText').textContent = 'Routes : Blanc ' + lw + ', Noir ' + lb + (lw === lb ? ' ; départage aux pions sur le plateau : Blanc ' + st.np[0] + ', Noir ' + st.np[1] + '.' : '.');
+    $('overlay').hidden = false;
+  }
+
+  function endTurn(t) {
+    history.push({ prev: snapshotBefore, move: { s: placed, t: t } });
+    if (t >= 0) { var q = st.b[t]; st.b[t] = -1; st.np[q]--; st.lost[q]++; for (var a = 0; a < 4; a++) st.cnt[K.LID[t][a] * 2 + q]--; }
+    lastRemoved = t; st.p = 1 - st.p; st.ply++; placed = -1; tgts = []; phase = 'place';
+    render(); maybeAI();
+  }
+  var snapshotBefore = null;
+
+  function clickCell(s) {
+    if (aiBusy || K.isOver(st) || isAI(st.p)) return;
+    if (phase === 'place') {
+      if (st.b[s] >= 0) return;
+      snapshotBefore = K.clone(st);
+      tgts = K.targets(st, s, st.p);
+      st.b[s] = st.p; st.np[st.p]++; for (var a = 0; a < 4; a++) st.cnt[K.LID[s][a] * 2 + st.p]++; st.res[st.p]--;
+      placed = s; lastRemoved = -1;
+      if (tgts.length === 0) { endTurn(-1); return; }
+      phase = 'remove'; render();
+    } else if (phase === 'remove') {
+      if (tgts.indexOf(s) >= 0) endTurn(s);
+    }
+  }
+
+  function maybeAI() {
+    if (K.isOver(st) || !isAI(st.p)) return;
+    if (isAuto() && paused && !stepOnce) { render(); return; }
+    stepOnce = false;
+    aiBusy = true; render();
+    var id = ++aiReq, depth = aiDepth(st.p), t0 = Date.now(), delay = isAuto() ? +$('speed').value : 250, payload = { id: id, b: Array.from(st.b), cnt: Array.from(st.cnt), res: st.res.slice(), np: st.np.slice(), lost: st.lost.slice(), p: st.p, ply: st.ply, depth: depth };
+    var done = function (m) {
+      if (id !== aiReq) return;
+      setTimeout(function () {
+        if (id !== aiReq) return;
+        aiBusy = false; snapshotBefore = K.clone(st); placed = m.s;
+        st.b[m.s] = st.p; st.np[st.p]++; for (var a = 0; a < 4; a++) st.cnt[K.LID[m.s][a] * 2 + st.p]++; st.res[st.p]--;
+        endTurn(m.t);
+      }, Math.max(0, delay - (Date.now() - t0)));
+    };
+    if (worker) { worker.onmessage = function (e) { if (e.data.id === id) done(e.data.m); }; worker.postMessage(payload); }
+    else setTimeout(function () { var s2 = { b: Int8Array.from(payload.b), cnt: Int16Array.from(payload.cnt), res: payload.res, np: payload.np, lost: payload.lost, p: payload.p, ply: payload.ply }; done(aiFallback(s2, depth)); }, 30);
+  }
+
+  function undo() {
+    if (!history.length || aiBusy) return;
+    aiReq++;
+    if (isAuto()) paused = true;
+    var steps = 1; if (!isAuto() && aiSide() >= 0 && history.length >= 2 && history[history.length - 1].prev.p === aiSide()) steps = 2;
+    if (phase === 'remove') { st = snapshotBefore; phase = 'place'; placed = -1; tgts = []; render(); return; }
+    var h; while (steps-- > 0 && history.length) h = history.pop();
+    st = h.prev; phase = 'place'; placed = -1; tgts = []; lastRemoved = -1; $('overlay').hidden = true; render(); maybeAI();
+  }
+
+  $('board').addEventListener('click', function (e) { var b = e.target.closest('.cell'); if (b) clickCell(+b.dataset.s); });
+  $('board').addEventListener('mouseover', function (e) { var b = e.target.closest('.cell'); var s = b ? +b.dataset.s : -1; if (s !== hover) { hover = s; if (phase === 'place') render(); } });
+  $('board').addEventListener('mouseleave', function () { hover = -1; if (phase === 'place') render(); });
+  $('btnPass').addEventListener('click', function () { if (phase === 'remove') endTurn(-1); });
+  $('btnNew').addEventListener('click', newGame);
+  $('btnAgain').addEventListener('click', newGame);
+  $('btnUndo').addEventListener('click', function () { if (phase === 'remove') { st = snapshotBefore; phase = 'place'; placed = -1; tgts = []; render(); } else undo(); });
+  $('mode').addEventListener('change', function () { aiReq++; aiBusy = false; paused = false; stepOnce = false; render(); maybeAI(); });
+  $('btnPause').addEventListener('click', function () {
+    paused = !paused;
+    if (paused) { if (aiBusy) { aiReq++; aiBusy = false; } render(); }
+    else { render(); maybeAI(); }
+  });
+  $('btnStep').addEventListener('click', function () { if (paused && !aiBusy) { stepOnce = true; maybeAI(); } });
+  $('level2').addEventListener('change', function () { try { localStorage.setItem('toll-level2', $('level2').value); } catch (e) {} });
+  $('level').addEventListener('change', function () { try { localStorage.setItem('toll-level', $('level').value); } catch (e) {} });
+  $('btnRules').addEventListener('click', function () { $('rulesDlg').hidden = false; });
+  $('btnCloseRules').addEventListener('click', function () { $('rulesDlg').hidden = true; });
+  try { var lv = localStorage.getItem('toll-level'); if (lv) $('level').value = lv; var lv2 = localStorage.getItem('toll-level2'); if (lv2) $('level2').value = lv2; } catch (e) {}
+
+  fit(); newGame();
+  if (typeof ResizeObserver !== 'undefined') new ResizeObserver(fit).observe($('stage'));
+})();
+</script>
