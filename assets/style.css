@@ -78,7 +78,6 @@ a:hover { text-decoration-thickness: 2px; }
   color: var(--panel-ink);
 }
 .profile-inner {
-  position: sticky; top: 0;
   min-height: 100vh;
   display: flex; flex-direction: column; gap: 1.75rem;
   padding: clamp(2rem, 4vw, 3rem) clamp(1.5rem, 2.5vw, 2.25rem);
@@ -97,6 +96,11 @@ a:hover { text-decoration-thickness: 2px; }
 .lang-switch span { background: var(--panel-ink); color: var(--panel); border-color: var(--panel-ink); }
 .lang-switch a:hover { border-color: var(--panel-muted); }
 
+.portrait {
+  width: 100%; height: auto; display: block;
+  border-radius: 4px;
+  border: 1px solid var(--panel-line);
+}
 .emblem { width: 6.5rem; height: auto; display: block; }
 .emblem .grid { stroke: var(--panel-line); }
 .emblem .dark { fill: var(--blue); }
@@ -118,6 +122,11 @@ a:hover { text-decoration-thickness: 2px; }
 .profile-links { list-style: none; margin: 0; padding: 0; display: grid; gap: .5rem; font-size: 1rem; }
 .profile-footer { margin-top: auto; color: var(--panel-muted); font-size: .9rem; }
 .profile-footer p { margin: 0; }
+
+/* Keep the panel in view while scrolling, only when it fits the screen height */
+@media (min-width: 52.01rem) and (min-height: 58rem) {
+  .profile-inner { position: sticky; top: 0; }
+}
 
 /* ---------- Main: the games ---------- */
 .catalog {
@@ -197,6 +206,7 @@ a:hover { text-decoration-thickness: 2px; }
     padding: 1.5rem var(--gutter) 2rem; gap: 1.25rem;
   }
   .emblem { width: 4.5rem; }
+  .portrait { max-width: 15rem; }
   .profile-footer { display: none; }
   .catalog { padding-top: 2rem; }
 }
