@@ -40,4 +40,14 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/doron/video.html"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/doron/video-fr.html"/>
   </url>
+  <url>
+    <loc>https://guillaume-enguehard.github.io/games/tafl-normand/play/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/tafl-normand/play/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/tafl-normand/play/fr.html"/>
+  </url>
+  <url>
+    <loc>https://guillaume-enguehard.github.io/games/tafl-normand/play/fr.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/tafl-normand/play/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/tafl-normand/play/fr.html"/>
+  </url>
 </urlset>

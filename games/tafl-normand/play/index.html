@@ -1,0 +1,800 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Play TAFL NORMAND online against the computer or with a friend: a symmetric tafl game where both kings start on the same square. Bring your king to a corner or capture the enemy king.">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://guillaume-enguehard.github.io/games/tafl-normand/play/">
+<link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/tafl-normand/play/">
+<link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/tafl-normand/play/fr.html">
+<title>TAFL NORMAND · Play online</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Alegreya+SC:wght@500;700&family=Alegreya+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout: one screen, no scroll — slim control bar, the board as large as the remaining square, one status line. */
+/* Layout: one screen, no scroll — slim control bar, the board as large as the remaining square, one status line. */
+:root {
+  --bg: #efeeeb;          /* neutral */
+  --panel: #f8f7f5;
+  --ink: #26272a;
+  --muted: #6d6e72;
+  --line: #d2d0cc;
+  --wood: #d8b989;        /* light oak board */
+  --grid: #8a6640;        /* board lines */
+  --edge: #6e4d2d;        /* board border */
+  --black: #1e2126;
+  --black-edge: #000;
+  --white: #f5f1e6;
+  --white-edge: #6d655a;
+  --woad: #2f5d8a;        /* selection, legal moves */
+  --madder: #a83a2c;      /* threat, forbidden */
+  --last: rgba(110, 77, 45, .22);
+  --font-display: "Alegreya SC", "Palatino Linotype", Georgia, serif;
+  --font-ui: "Alegreya Sans", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #1b1b1c; --panel: #242426; --ink: #e8e6e2; --muted: #9c9da1; --line: #38383b;
+  --wood: #a27c4f; --grid: #4a3119; --edge: #3a2614;
+  --black: #121417; --black-edge: #000; --white: #efe9dc; --white-edge: #2b261f;
+  --woad: #7fb0e0; --madder: #e06b58; --last: rgba(40, 24, 10, .28); color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #1b1b1c; --panel: #242426; --ink: #e8e6e2; --muted: #9c9da1; --line: #38383b;
+  --wood: #a27c4f; --grid: #4a3119; --edge: #3a2614;
+  --black: #121417; --black-edge: #000; --white: #efe9dc; --white-edge: #2b261f;
+  --woad: #7fb0e0; --madder: #e06b58; --last: rgba(40, 24, 10, .28); color-scheme: dark }
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 15px; overflow: hidden; }
+.app { height: 100%; box-sizing: border-box; display: grid; grid-template-rows: auto 1fr auto; gap: 8px;
+  padding-block: 10px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+header { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+h1 { font-family: var(--font-display); font-weight: 700; font-size: 1.35rem; letter-spacing: .04em; margin: 0; margin-right: auto; white-space: nowrap; }
+h1 small { font-family: var(--font-ui); font-weight: 400; font-size: .8rem; letter-spacing: 0; color: var(--muted); margin-left: 6px; }
+.controls { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+select, button { font: inherit; font-size: .9rem; color: var(--ink); background: var(--panel); border: 1px solid var(--line); border-radius: 6px; padding: 5px 9px; cursor: pointer; }
+button:hover, select:hover { border-color: var(--muted); }
+button:focus-visible, select:focus-visible, .cell:focus-visible { outline: 2px solid var(--woad); outline-offset: 1px; }
+button:disabled { opacity: .45; cursor: default; }
+button.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+main { min-height: 0; container-type: size; display: grid; place-items: center; position: relative; }
+.frame { --s: min(100cqw, 100cqh); width: var(--s); height: var(--s); display: grid; grid-template-columns: 1.1fr repeat(11, 1fr) .4fr; grid-template-rows: .4fr repeat(11, 1fr) 1.1fr; }
+.coord { display: grid; place-items: center; font-size: calc(var(--s) / 46); color: var(--muted); font-variant-numeric: tabular-nums; user-select: none; }
+.board { grid-column: 2 / 13; grid-row: 2 / 13; display: grid; grid-template-columns: repeat(11, 1fr); grid-template-rows: repeat(11, 1fr);
+  background: var(--wood); border: 2px solid var(--edge); border-radius: 3px; position: relative; touch-action: manipulation; }
+.cell { position: relative; border: 0; padding: 0; margin: 0; border-radius: 0; background: transparent; box-shadow: inset 0 0 0 .5px var(--grid); cursor: default; }
+.cell.special::after { content: ""; position: absolute; inset: 0; pointer-events: none; opacity: .75;
+  background: linear-gradient(45deg, transparent calc(50% - .9px), var(--grid) calc(50% - .9px), var(--grid) calc(50% + .9px), transparent calc(50% + .9px)),
+              linear-gradient(-45deg, transparent calc(50% - .9px), var(--grid) calc(50% - .9px), var(--grid) calc(50% + .9px), transparent calc(50% + .9px)); }
+.cell.last { background-image: linear-gradient(var(--last), var(--last)); }
+.cell.can { cursor: pointer; }
+.piece { position: absolute; inset: 11%; border-radius: 50%; z-index: 1; transition: transform .12s ease; }
+.piece.b { background: radial-gradient(circle at 35% 30%, #3a3f47, var(--black) 60%); box-shadow: 0 1px 0 var(--black-edge), inset 0 0 0 1px var(--black-edge); }
+.piece.w { background: radial-gradient(circle at 35% 30%, #fffdf6, var(--white) 60%); box-shadow: 0 1px 0 var(--white-edge), inset 0 0 0 1px var(--white-edge); }
+.piece.king::before { content: ""; position: absolute; inset: 22%; border-radius: 50%; border: 2px solid currentColor; }
+.piece.king::after { content: ""; position: absolute; inset: 42%; border-radius: 50%; background: currentColor; }
+.piece.b.king { color: #c9b27c; } .piece.w.king { color: #7a6233; }
+.piece.pair { background: linear-gradient(90deg, var(--black) 50%, var(--white) 50%); box-shadow: inset 0 0 0 1px var(--white-edge); color: #b39456; }
+.piece.pair::before { content: ""; position: absolute; inset: 22%; border-radius: 50%; border: 2px solid #b39456; }
+.cell.sel .piece { transform: scale(1.08); box-shadow: 0 0 0 3px var(--woad); }
+.cell.threat .piece { box-shadow: 0 0 0 3px var(--madder); }
+.dot { position: absolute; inset: 37%; border-radius: 50%; background: var(--woad); opacity: .8; z-index: 2; pointer-events: none; }
+.no { position: absolute; inset: 34%; z-index: 2; pointer-events: none; opacity: .75; }
+.no::before, .no::after { content: ""; position: absolute; left: 45%; top: 0; width: 10%; height: 100%; background: var(--madder); border-radius: 2px; transform: rotate(45deg); }
+.no::after { transform: rotate(-45deg); }
+.cell.winfrom .piece { box-shadow: 0 0 0 3px var(--madder); }
+.winmark { position: absolute; inset: 16%; border-radius: 50%; border: 3px solid var(--madder); z-index: 3; pointer-events: none; }
+.cell.capt::before { content: ""; position: absolute; inset: 30%; border-radius: 50%; border: 2px dashed var(--madder); opacity: .7; }
+.banner { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); background: var(--panel); border: 1px solid var(--line); border-radius: 10px;
+  padding: 8px 16px; text-align: center; box-shadow: 0 6px 20px rgba(0,0,0,.22); max-width: min(92%, 380px); z-index: 5; cursor: pointer; }
+.banner b { display: block; font-family: var(--font-display); font-size: 1.25rem; margin-bottom: 2px; }
+.banner span { color: var(--muted); font-size: .9rem; }
+footer { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 4px 16px; font-size: .9rem; min-height: 1.4em; }
+#status { font-weight: 500; }
+#status.warn { color: var(--madder); }
+.meta { color: var(--muted); font-variant-numeric: tabular-nums; display: flex; flex-wrap: wrap; gap: 2px 14px; }
+.meta span { white-space: nowrap; }
+.swatch { display: inline-block; width: .8em; height: .8em; border-radius: 50%; vertical-align: -.05em; margin-right: 4px; box-shadow: inset 0 0 0 1px var(--white-edge); }
+.swatch.b { background: var(--black); } .swatch.w { background: var(--white); }
+#rules { position: absolute; inset: 0; z-index: 10; background: var(--bg); overflow: auto; padding-block: 16px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+#rules .inner { max-width: 62ch; margin: 0 auto; line-height: 1.45; }
+#rules h2 { font-family: var(--font-display); font-size: 1.3rem; margin: 0 0 8px; }
+#rules h3 { font-family: var(--font-display); font-size: 1.02rem; margin: 14px 0 4px; letter-spacing: .03em; }
+#rules p { margin: 0 0 6px; }
+@media (max-width: 560px) { h1 small { display: none; } select, button { padding: 4px 7px; font-size: .85rem; } }
+@media (prefers-reduced-motion: reduce) { .piece { transition: none; } }
+</style>
+</head>
+<body>
+
+
+<div class="app" id="app">
+  <header>
+    <h1>TAFL NORMAND<small>classic rules</small></h1>
+    <div class="controls">
+      <select id="mode" aria-label="Game mode">
+        <option value="b">You play Black</option>
+        <option value="w">You play White</option>
+        <option value="auto">AI vs AI</option>
+        <option value="two">Two players</option>
+      </select>
+      <select id="level" aria-label="AI level">
+        <option value="2000">Beginner</option>
+        <option value="10000">Easy</option>
+        <option value="50000" selected>Medium</option>
+        <option value="200000">Strong</option>
+        <option value="800000">Expert</option>
+      </select>
+      <button id="new" class="primary">New game</button>
+      <button id="undo">Undo</button>
+      <button id="pause" hidden>Pause</button>
+      <button id="help">Rules</button>
+    </div>
+  </header>
+  <main id="main">
+    <div class="frame" id="frame"></div>
+    <div class="banner" id="banner" title="Click to see the board" hidden><b id="bannerT"></b><span id="bannerS"></span></div>
+  </main>
+  <footer>
+    <div id="status">Black plays first.</div>
+    <div class="meta"><span id="counts"></span><span id="ai"></span></div>
+  </footer>
+  <div id="rules" hidden>
+    <div class="inner">
+      <h2>TAFL NORMAND rules</h2>
+      <p>11 × 11 board. Each side has 20 pawns and a king. Black plays first.</p>
+      <h3>Start</h3>
+      <p>The two kings start stacked on f6. The first player to move this pair takes his own king along and leaves the enemy king on f6.</p>
+      <h3>Moving</h3>
+      <p>All pieces move like a rook in chess, over any number of empty squares, without jumping. No piece may stop on f6, but pieces may cross it when it is empty. Only kings may enter the corners.</p>
+      <h3>Capturing</h3>
+      <p>Only pawns capture. An enemy piece caught in line between the pawn that arrives and one of your pawns is removed. An empty corner or an empty f6 counts as one of your pawns.</p>
+      <p>The king is captured the same way, except on f6 where it is safe. On an edge, it can only be captured along the edge, between two pawns.</p>
+      <h3>Winning</h3>
+      <p>You win if your king reaches a corner, if you capture the enemy king, or if your opponent cannot move.</p>
+      <h3>Threats</h3>
+      <p>If your opponent could win on his next move, you must stop the threat. A move that leaves him an immediate win is not allowed (red crosses on the board). If no move stops it, you lose. The third repetition of a position is a draw.</p>
+      <p><button id="closeRules" class="primary">Back to the game</button></p>
+    </div>
+  </div>
+</div>
+
+<script id="engine">
+// Tafl normand (v10.6 rules, classic): rules and alpha-beta AI.
+// Port of the Java engine used in the simulation study (Nor.java, classic normand, threat rule on),
+// kept bit-identical (same Zobrist keys, same RNG, same move ordering) so that both can be cross-checked.
+var Engine = (function () {
+  'use strict';
+  var N = 11, NS = 121, C = 60, WIN = 100000;
+  var EDGE_HOSTILE = false; // classic rules (set true for the edge-hostile variant)
+  var DX = [1, -1, 0, 0], DY = [0, 0, 1, -1];
+  var NB = new Int16Array(NS * 4), CORNER = new Uint8Array(NS), OUTER = new Uint8Array(NS), SPECIAL = new Uint8Array(NS);
+  for (var s = 0; s < NS; s++) {
+    var x = s % N, y = (s / N) | 0;
+    for (var d = 0; d < 4; d++) { var nx = x + DX[d], ny = y + DY[d]; NB[s * 4 + d] = (nx >= 0 && ny >= 0 && nx < N && ny < N) ? ny * N + nx : -1; }
+    OUTER[s] = (x === 0 || y === 0 || x === N - 1 || y === N - 1) ? 1 : 0;
+    CORNER[s] = ((x === 0 || x === N - 1) && (y === 0 || y === N - 1)) ? 1 : 0;
+    SPECIAL[s] = (CORNER[s] || s === C) ? 1 : 0;
+  }
+  // ---- java.util.Random (48-bit LCG), for identical Zobrist keys and identical root shuffles
+  var MULT = 0x5DEECE66Dn, MASK = (1n << 48n) - 1n;
+  function JRandom(seed) { this.seed = (BigInt.asUintN(64, BigInt(seed)) ^ MULT) & MASK; }
+  JRandom.prototype.next = function (bits) { this.seed = (this.seed * MULT + 0xBn) & MASK; return Number(BigInt.asIntN(32, this.seed >> BigInt(48 - bits))); };
+  JRandom.prototype.nextInt = function (bound) {
+    if ((bound & -bound) === bound) return Number((BigInt(bound) * BigInt(this.next(31))) >> 31n);
+    var bits, val;
+    do { bits = this.next(31); val = bits % bound; } while (bits - val + (bound - 1) > 2147483647);
+    return val;
+  };
+  JRandom.prototype.nextLongHL = function () { var hi = this.next(32), lo = this.next(32); // (hi<<32) + lo with sign of lo
+    var v = BigInt.asIntN(64, (BigInt(hi) << 32n) + BigInt(lo)); return [Number(BigInt.asIntN(32, v >> 32n)), Number(BigInt.asIntN(32, v))]; };
+  var ZH = new Int32Array(6 * NS), ZL = new Int32Array(6 * NS), ZSH, ZSL;
+  (function () { var r = new JRandom(12345); for (var i = 0; i < 6; i++) for (var s = 0; s < NS; s++) { var h = r.nextLongHL(); ZH[i * NS + s] = h[0]; ZL[i * NS + s] = h[1]; } var z = r.nextLongHL(); ZSH = z[0]; ZSL = z[1]; })();
+
+  function owner(v) { return v === 1 || v === 4 ? 1 : v === 2 || v === 3 ? 2 : v === 5 ? 3 : 0; }
+  function isKing(v) { return v === 3 || v === 4 || v === 5; }
+  function pawnOf(p) { return p === 1 ? 1 : 2; }
+  function kingOf(p) { return p === 1 ? 4 : 3; }
+  function sq(a) { return (parseInt(a.substring(1), 10) - 1) * N + (a.toLowerCase().charCodeAt(0) - 97); }
+  function nm(s) { return String.fromCharCode(97 + s % N) + (((s / N) | 0) + 1); }
+  var START1 = "d11 f11 h11 b10 f10 a7 g7 k7 d6 e6 g6 h6 a5 e5 k5 f2 j2 d1 f1 h1".split(" ");
+  var START2 = "e11 g11 j10 a8 f8 k8 f7 e7 a6 b6 j6 k6 f5 g5 a4 f4 k4 b2 e1 g1".split(" ");
+  var W_EXPERT = [0, 1.0, 0.6, 1.2, 0.05, -0.35, 0.5, 0, 0];
+  var GUARD_SQ = [], GUARD_WV = [];
+  (function () {
+    var cs = [[0, 0], [N - 1, 0], [0, N - 1], [N - 1, N - 1]];
+    for (var c = 0; c < 4; c++) {
+      var sqs = [], ws = [];
+      for (var s = 0; s < NS; s++) {
+        var dx = Math.abs(s % N - cs[c][0]), dy = Math.abs(((s / N) | 0) - cs[c][1]), w = 0;
+        if ((dx === 1 && dy === 2) || (dx === 2 && dy === 1)) w = 10;
+        else if (dx === 2 && dy === 2) w = 6;
+        else if ((dx === 0 && dy === 2) || (dx === 2 && dy === 0)) w = 6;
+        else if ((dx === 1 && dy === 3) || (dx === 3 && dy === 1)) w = 5;
+        else if (dx === 1 && dy === 1) w = 3;
+        if (w > 0) { sqs.push(s); ws.push(w); }
+      }
+      GUARD_SQ.push(sqs); GUARD_WV.push(ws);
+    }
+  })();
+  function cornerIdx(s) { return s === 0 ? 0 : s === N - 1 ? 1 : s === NS - N ? 2 : 3; }
+
+  function Game(lite) {
+    this.b = new Int8Array(NS); this.side = 1; this.hh = 0; this.hl = 0; this.ply = 0;
+    this.rep = new Map(); // key lo -> array of [hi, count]
+    var M = 4096;
+    this.uFrom = new Int16Array(M); this.uTo = new Int16Array(M); this.uPiece = new Int8Array(M); this.uCapN = new Int8Array(M);
+    this.uCapS = new Int16Array(M * 4); this.uCapP = new Int8Array(M * 4); this.uHH = new Int32Array(M); this.uHL = new Int32Array(M); this.uPair = new Uint8Array(M);
+    this.sp = 0; this.kpos = [-1, -1, -1]; this.cnt = new Int32Array(6);
+    this.kingCapturedFlag = false; this.edgeCapFlag = false;
+    this.W = W_EXPERT.slice();
+    // search state
+    this.TTB = lite ? 8 : 20; var T = 1 << this.TTB; this.ttH = new Int32Array(T); this.ttL = new Int32Array(T); this.ttMove = new Int32Array(T);
+    this.ttVal = new Float64Array(T); this.ttDepth = new Int8Array(T); this.ttFlag = new Int8Array(T);
+    this.history = new Int32Array(lite ? 1 : NS * NS); this.nodes = 0; this.nodeLimit = 0; this.abort = false;
+    this.mvBuf = []; this.scBuf = []; this.tmpBuf = [];
+    for (var i = 0; i < (lite ? 2 : 64); i++) { this.mvBuf.push(new Int32Array(1200)); this.scBuf.push(new Float64Array(1200)); this.tmpBuf.push(new Int32Array(1200)); }
+    this.pathH = new Int32Array(256); this.pathL = new Int32Array(256); this.pathN = 0; this.repHits = 0;
+    this.rnd = new JRandom(Math.floor(Math.random() * 2147483647));
+    this.lastDepth = 0; this.lastScore = 0; this.F = new Float64Array(9);
+    this.routes2 = 0; this.kmob = 0; this.kf1 = new Float64Array(4); this.kf2 = new Float64Array(4);
+  }
+  var G = Game.prototype;
+  G.repCount = function (hh, hl) { var a = this.rep.get(hl); if (!a) return 0; for (var i = 0; i < a.length; i++) if (a[i][0] === hh) return a[i][1]; return 0; };
+  G.repAdd = function (hh, hl) { var a = this.rep.get(hl); if (!a) { a = []; this.rep.set(hl, a); } for (var i = 0; i < a.length; i++) if (a[i][0] === hh) { a[i][1]++; return; } a.push([hh, 1]); };
+  G.put = function (s, v) {
+    var o = this.b[s];
+    if (o !== 0) { this.hh ^= ZH[o * NS + s]; this.hl ^= ZL[o * NS + s]; this.cnt[o]--; if (o === 3) this.kpos[2] = -1; else if (o === 4) this.kpos[1] = -1; }
+    this.b[s] = v;
+    if (v !== 0) { this.hh ^= ZH[v * NS + s]; this.hl ^= ZL[v * NS + s]; this.cnt[v]++; if (v === 3) this.kpos[2] = s; else if (v === 4) this.kpos[1] = s; }
+  };
+  G.setup = function () {
+    this.b.fill(0); var i;
+    for (i = 0; i < START1.length; i++) this.b[sq(START1[i])] = 1;
+    for (i = 0; i < START2.length; i++) this.b[sq(START2[i])] = 2;
+    this.b[C] = 5; this.side = 1; this.ply = 0; this.sp = 0; this.rep = new Map();
+    this.cnt.fill(0); this.kpos[1] = this.kpos[2] = -1;
+    for (var s = 0; s < NS; s++) { var v = this.b[s]; this.cnt[v]++; if (v === 3) this.kpos[2] = s; else if (v === 4) this.kpos[1] = s; }
+    this.hh = 0; this.hl = 0; for (s = 0; s < NS; s++) if (this.b[s] !== 0) { this.hh ^= ZH[this.b[s] * NS + s]; this.hl ^= ZL[this.b[s] * NS + s]; }
+    this.repAdd(this.hh, this.hl);
+  };
+  G.genPseudo = function (p, buf) {
+    var n = 0, b = this.b;
+    for (var s = 0; s < NS; s++) {
+      var v = b[s]; if (v === 0 || !(owner(v) === p || v === 5)) continue;
+      var king = isKing(v);
+      for (var d = 0; d < 4; d++) {
+        var t = NB[s * 4 + d];
+        while (t >= 0 && b[t] === 0) { if (!king && CORNER[t]) break; if (t !== C) buf[n++] = s * 256 + t; t = NB[t * 4 + d]; }
+      }
+    }
+    return n;
+  };
+  G.hasPseudo = function (p) {
+    var b = this.b;
+    for (var s = 0; s < NS; s++) {
+      var v = b[s]; if (v === 0 || !(owner(v) === p || v === 5)) continue;
+      var king = isKing(v);
+      for (var d = 0; d < 4; d++) { var t = NB[s * 4 + d]; while (t >= 0 && b[t] === 0) { if (!king && CORNER[t]) break; if (t !== C) return true; t = NB[t * 4 + d]; } }
+    }
+    return false;
+  };
+  G.cap = function (s) { var k = this.sp * 4 + this.uCapN[this.sp]; this.uCapS[k] = s; this.uCapP[k] = this.b[s]; this.uCapN[this.sp]++; this.put(s, 0); };
+  G.captures = function (t, m) {
+    this.kingCapturedFlag = false; this.edgeCapFlag = false;
+    var e = 3 - m, b = this.b;
+    for (var d = 0; d < 4; d++) {
+      var n1 = NB[t * 4 + d]; if (n1 < 0) continue; var n2 = NB[n1 * 4 + d];
+      var tc = b[n1], isK = tc === kingOf(e) && n1 !== C;
+      if (!(tc === pawnOf(e) || isK)) continue;
+      var anvil;
+      if (n2 < 0) anvil = isK && EDGE_HOSTILE; // optional variant: edge hostile to kings
+      else anvil = b[n2] === pawnOf(m) || (SPECIAL[n2] && b[n2] === 0);
+      if (anvil) { this.cap(n1); if (isK) { this.kingCapturedFlag = true; if (n2 < 0) this.edgeCapFlag = true; } }
+    }
+  };
+  G.make = function (mv) {
+    var f = mv >> 8, t = mv & 255, v = this.b[f], sp = this.sp;
+    this.uFrom[sp] = f; this.uTo[sp] = t; this.uPiece[sp] = v; this.uHH[sp] = this.hh; this.uHL[sp] = this.hl; this.uCapN[sp] = 0; this.uPair[sp] = 0;
+    this.put(f, 0);
+    if (v === 5) { this.put(t, kingOf(this.side)); this.put(C, kingOf(3 - this.side)); this.uPair[sp] = 1; }
+    else this.put(t, v);
+    if (v === 1 || v === 2) this.captures(t, this.side);
+    this.side = 3 - this.side; this.hh ^= ZSH; this.hl ^= ZSL; this.ply++; this.sp++;
+  };
+  G.unmake = function () {
+    this.sp--; this.ply--; this.side = 3 - this.side;
+    var sp = this.sp, f = this.uFrom[sp], t = this.uTo[sp], v = this.uPiece[sp];
+    for (var i = this.uCapN[sp] - 1; i >= 0; i--) this.put(this.uCapS[sp * 4 + i], this.uCapP[sp * 4 + i]);
+    if (this.uPair[sp]) this.put(C, 0);
+    this.put(t, 0); this.put(f, v);
+    this.hh = this.uHH[sp]; this.hl = this.uHL[sp];
+  };
+  G.kingSite = function (p) { return this.kpos[p]; };
+  G.pairOnBoard = function () { return this.b[C] === 5; };
+  /** outcome after a move by mover (rules only): 0 none, 1/2 winner */
+  G.ruleOutcome = function (mover) {
+    var own = this.kpos[mover];
+    if (own >= 0 && CORNER[own]) return mover;
+    if (!this.pairOnBoard() && this.kpos[3 - mover] < 0) return mover;
+    if (!this.hasPseudo(this.side)) return mover;
+    return 0;
+  };
+  /** full outcome after a played move: rules, then third repetition = draw (3) */
+  G.outcome = function (mover) {
+    var o = this.ruleOutcome(mover); if (o !== 0) return o;
+    if (this.repCount(this.hh, this.hl) + 1 >= 3) return 3;
+    return 0;
+  };
+  G.play = function (mv) { var mover = this.side; this.make(mv); var o = this.outcome(mover); this.repAdd(this.hh, this.hl); return o; };
+  // ---- threat rule
+  G.kingCanReachCorner = function (p) {
+    var k = this.kpos[p]; if (k < 0) return false; var b = this.b;
+    for (var d = 0; d < 4; d++) { var t = NB[k * 4 + d]; while (t >= 0 && b[t] === 0) { if (CORNER[t]) return true; t = NB[t * 4 + d]; } }
+    return false;
+  };
+  G.pawnCanReach = function (p, site) {
+    var b = this.b;
+    if (site < 0 || b[site] !== 0 || CORNER[site] || site === C) return false;
+    var pc = pawnOf(p);
+    for (var d = 0; d < 4; d++) { var t = NB[site * 4 + d]; while (t >= 0 && b[t] === 0) t = NB[t * 4 + d]; if (t >= 0 && b[t] === pc) return true; }
+    return false;
+  };
+  G.kingCapturableBy = function (p) {
+    var k = this.kpos[3 - p]; if (k < 0 || k === C) return false;
+    var pc = pawnOf(p), b = this.b;
+    for (var d = 0; d < 4; d++) {
+      var sup = NB[k * 4 + d], opp = NB[k * 4 + (d ^ 1)];
+      if (opp < 0) continue;
+      var support = sup < 0 ? EDGE_HOSTILE : (b[sup] === pc || (SPECIAL[sup] && b[sup] === 0));
+      if (support && this.pawnCanReach(p, opp)) return true;
+    }
+    return false;
+  };
+  G.mobileCount = function (p) {
+    var n = 0, b = this.b;
+    for (var s = 0; s < NS; s++) {
+      var v = b[s]; if (v === 0 || !(owner(v) === p || v === 5)) continue;
+      var king = isKing(v), mob = false;
+      for (var d = 0; d < 4 && !mob; d++) { var t = NB[s * 4 + d]; while (t >= 0 && b[t] === 0) { if (!king && CORNER[t]) break; if (t !== C) { mob = true; break; } t = NB[t * 4 + d]; } }
+      if (mob && ++n >= 9) return n;
+    }
+    return n;
+  };
+  /** the side to move has an immediate winning move */
+  G.oppHasImmediateWin = function (slot) {
+    var opp = this.side, me = 3 - this.side;
+    if (this.kingCanReachCorner(opp)) return true;
+    if (this.kingCapturableBy(opp)) return true;
+    if (this.mobileCount(me) >= 9) return false;
+    var buf = this.tmpBuf[slot], n = this.genPseudo(opp, buf);
+    for (var i = 0; i < n; i++) { this.make(buf[i]); var win = this.ruleOutcome(opp) === opp; this.unmake(); if (win) return true; }
+    return false;
+  };
+  G.genLegal = function (buf, slot) {
+    var n = this.genPseudo(this.side, buf), m = 0, me = this.side;
+    for (var i = 0; i < n; i++) {
+      var mv = buf[i]; this.make(mv);
+      var o = this.ruleOutcome(me), keep;
+      if (o === me) keep = true;
+      else if (this.repCount(this.hh, this.hl) + 1 >= 3) keep = true;
+      else keep = !this.oppHasImmediateWin(Math.min(63, slot + 1));
+      this.unmake();
+      if (keep) buf[m++] = mv;
+    }
+    return m;
+  };
+  /** bitmask of the win types player p could achieve right now: 1 corner, 2 capture, 4 edge capture, 8 blockade */
+  G.winTypes = function (p) {
+    var saved = this.side, sh = this.hh, sl = this.hl;
+    if (this.side !== p) { this.side = p; this.hh ^= ZSH; this.hl ^= ZSL; }
+    var buf = this.wtBuf || (this.wtBuf = new Int32Array(1200)), n = this.genPseudo(p, buf), m = 0;
+    for (var i = 0; i < n; i++) {
+      this.make(buf[i]);
+      if (this.ruleOutcome(p) === p) {
+        var own = this.kpos[p];
+        if (own >= 0 && CORNER[own]) m |= 1;
+        else if (!this.pairOnBoard() && this.kpos[3 - p] < 0) m |= this.edgeCapFlag ? 4 : 2;
+        else m |= 8;
+      }
+      this.unmake();
+    }
+    if (this.side !== saved) { this.side = saved; this.hh = sh; this.hl = sl; }
+    return m;
+  };
+  /** winning moves available to player p right now (p not necessarily to move): [{mv, type}] with type 1 corner, 2 capture, 4 edge capture, 8 blockade */
+  G.winningMoves = function (p) {
+    var saved = this.side, sh = this.hh, sl = this.hl, out = [];
+    if (this.side !== p) { this.side = p; this.hh ^= ZSH; this.hl ^= ZSL; }
+    var buf = new Int32Array(1200), n = this.genPseudo(p, buf);
+    for (var i = 0; i < n; i++) {
+      this.make(buf[i]);
+      if (this.ruleOutcome(p) === p) {
+        var own = this.kpos[p], ty = (own >= 0 && CORNER[own]) ? 1 : (!this.pairOnBoard() && this.kpos[3 - p] < 0) ? (this.edgeCapFlag ? 4 : 2) : 8;
+        out.push({ mv: buf[i], type: ty });
+      }
+      this.unmake();
+    }
+    if (this.side !== saved) { this.side = saved; this.hh = sh; this.hl = sl; }
+    return out;
+  };
+  // ---- evaluation
+  G.kingDist = function (k) {
+    this.routes2 = 0; this.kmob = 0; if (k < 0) return 9;
+    var best = 9, c2 = [false, false, false, false], b = this.b;
+    for (var d = 0; d < 4; d++) {
+      var t = NB[k * 4 + d];
+      while (t >= 0 && b[t] === 0) {
+        if (t !== C) this.kmob++;
+        if (CORNER[t]) best = 1;
+        else if (t !== C) {
+          for (var e = 0; e < 4; e++) {
+            if (e === (d ^ 1)) continue;
+            var u = NB[t * 4 + e];
+            while (u >= 0 && b[u] === 0) { if (CORNER[u]) { if (best > 2) best = 2; c2[cornerIdx(u)] = true; } u = NB[u * 4 + e]; }
+          }
+        }
+        t = NB[t * 4 + d];
+      }
+    }
+    for (var i = 0; i < 4; i++) if (c2[i]) this.routes2++;
+    if (best > 2) best = 3;
+    return best;
+  };
+  G.pressure = function (k, enemyPawn) { if (k < 0) return 0; var n = 0; for (var d = 0; d < 4; d++) { var q = NB[k * 4 + d]; if (q >= 0 && this.b[q] === enemyPawn) n++; } return n; };
+  G.guard = function (pawn) {
+    var g = 0;
+    for (var c = 0; c < 4; c++) { var sum = 0, sqs = GUARD_SQ[c], ws = GUARD_WV[c]; for (var i = 0; i < sqs.length; i++) if (this.b[sqs[i]] === pawn) sum += ws[i]; g += Math.min(sum, 25) / 10.0; }
+    return g;
+  };
+  G.kingFeat = function (p, out) {
+    var k = this.kpos[p];
+    if (k < 0) { out[0] = out[1] = out[2] = out[3] = 0; return; }
+    var dist = this.kingDist(k);
+    out[0] = 3 - dist; out[1] = this.routes2; out[2] = this.kmob; out[3] = this.pressure(k, pawnOf(3 - p));
+  };
+  G.evaluate = function (p) {
+    var F = this.F, kf1 = this.kf1, kf2 = this.kf2;
+    this.kingFeat(1, kf1); this.kingFeat(2, kf2);
+    F[0] = 1; F[1] = this.cnt[1] - this.cnt[2]; F[2] = kf1[0] - kf2[0]; F[3] = kf1[1] - kf2[1]; F[4] = kf1[2] - kf2[2]; F[5] = kf1[3] - kf2[3];
+    F[6] = this.guard(1) - this.guard(2); F[7] = this.side === 1 ? 1 : 0; F[8] = 0;
+    var d = 0, W = this.W; for (var i = 0; i < W.length; i++) d += W[i] * F[i];
+    return p === 1 ? d : -d;
+  };
+  // ---- search
+  G.util = function (o, p, depthLeft) { if (o === 3) return 0; return o === p ? WIN + depthLeft : -WIN - depthLeft; };
+  G.seenBefore = function () { if (this.repCount(this.hh, this.hl) > 0) return true; for (var i = 0; i < this.pathN - 1; i++) if (this.pathH[i] === this.hh && this.pathL[i] === this.hl) return true; return false; };
+  G.outcomeInSearch = function (mover) {
+    var o = this.ruleOutcome(mover); if (o !== 0) return o;
+    var c2 = 1; for (var i = 0; i < this.pathN; i++) if (this.pathH[i] === this.hh && this.pathL[i] === this.hl) c2++;
+    if (c2 + this.repCount(this.hh, this.hl) >= 3) { this.repHits++; return 3; }
+    return 0;
+  };
+  G.orderMoves = function (buf, n, ttMove, slot) {
+    var sc = this.scBuf[slot], b = this.b;
+    for (var i = 0; i < n; i++) {
+      var mv = buf[i], f = mv >> 8, t = mv & 255, s = this.history[f * NS + t];
+      if (mv === ttMove) s += 1e9;
+      var v = b[f];
+      if (isKing(v)) s += 1e5 + (CORNER[t] ? 1e7 : 0);
+      for (var d = 0; d < 4; d++) { var n1 = NB[t * 4 + d]; if (n1 < 0) continue; var n2 = NB[n1 * 4 + d]; if (n2 < 0) continue;
+        if (b[n1] !== 0 && owner(b[n1]) !== owner(v) && owner(b[n1]) !== 3 && (owner(b[n2]) === owner(v) || (SPECIAL[n2] && b[n2] === 0))) s += 1e6; }
+      sc[i] = s;
+    }
+    for (i = 1; i < n; i++) { var m = buf[i], ss = sc[i], j = i - 1; while (j >= 0 && sc[j] < ss) { buf[j + 1] = buf[j]; sc[j + 1] = sc[j]; j--; } buf[j + 1] = m; sc[j + 1] = ss; }
+  };
+  G.negamax = function (depth, alpha, beta, slot) {
+    if ((++this.nodes & 1023) === 0 && this.nodes > this.nodeLimit) this.abort = true;
+    if (this.abort) return 0;
+    var p = this.side, idx = this.hl & ((1 << this.TTB) - 1), ttMove = 0;
+    var repSensitive = this.seenBefore();
+    if (this.ttH[idx] === this.hh && this.ttL[idx] === this.hl) {
+      ttMove = this.ttMove[idx];
+      if (this.ttDepth[idx] >= depth && !repSensitive) {
+        var tv = this.ttVal[idx], fl = this.ttFlag[idx];
+        if (fl === 0) return tv; if (fl === 1 && tv >= beta) return tv; if (fl === 2 && tv <= alpha) return tv;
+      }
+    }
+    if (depth <= 0) return this.evaluate(p);
+    var buf = this.mvBuf[slot], n = this.genPseudo(p, buf);
+    if (n === 0) return -WIN - depth;
+    var legalCount = 0;
+    this.orderMoves(buf, n, ttMove, slot);
+    var best = -1e18, a0 = alpha, bestMv = 0, rh0 = this.repHits, sc = this.scBuf[slot];
+    for (var i = 0; i < n; i++) {
+      var mv = buf[i], tactical = sc[i] >= 1e5;
+      this.make(mv);
+      var o = this.outcomeInSearch(p);
+      if (o === 0 && this.oppHasImmediateWin(Math.min(63, slot + 1))) { this.unmake(); continue; }
+      legalCount++;
+      var v;
+      if (o !== 0) v = this.util(o, p, depth);
+      else {
+        this.pathH[this.pathN] = this.hh; this.pathL[this.pathN] = this.hl; this.pathN++;
+        if (legalCount === 1) v = -this.negamax(depth - 1, -beta, -alpha, slot + 1);
+        else {
+          var red = (depth >= 3 && i >= 4 && !tactical) ? (i >= 12 && depth >= 4 ? 2 : 1) : 0;
+          v = -this.negamax(depth - 1 - red, -alpha - 1e-6, -alpha, slot + 1);
+          if (!this.abort && v > alpha && (red > 0 || v < beta)) v = -this.negamax(depth - 1, -beta, -alpha, slot + 1);
+        }
+        this.pathN--;
+      }
+      this.unmake();
+      if (this.abort) return 0;
+      if (v > best) { best = v; bestMv = mv; }
+      if (v > alpha) alpha = v;
+      if (alpha >= beta) { this.history[(mv >> 8) * NS + (mv & 255)] += depth * depth; break; }
+    }
+    if (legalCount === 0) return -WIN - depth;
+    if (this.repHits === rh0 && !repSensitive) {
+      this.ttH[idx] = this.hh; this.ttL[idx] = this.hl; this.ttMove[idx] = bestMv; this.ttVal[idx] = best; this.ttDepth[idx] = depth;
+      this.ttFlag[idx] = best <= a0 ? 2 : best >= beta ? 1 : 0;
+    } else if (!(this.ttH[idx] === this.hh && this.ttL[idx] === this.hl)) {
+      this.ttH[idx] = this.hh; this.ttL[idx] = this.hl; this.ttMove[idx] = bestMv; this.ttDepth[idx] = -1; this.ttFlag[idx] = 0;
+    }
+    return best;
+  };
+  G.orderRoot = function (order, n, first) {
+    for (var i = 0; i < n; i++) if (order[i] === first) { order[i] = order[0]; order[0] = first; break; }
+    for (i = n - 1; i > 1; i--) { var j = 1 + this.rnd.nextInt(i), t = order[i]; order[i] = order[j]; order[j] = t; }
+  };
+  /** iterative deepening with a node budget; randomMargin > 0 picks among moves within the margin of the best */
+  G.searchRoot = function (budget, maxDepth, randomMargin) {
+    this.nodes = 0; this.nodeLimit = budget; this.abort = false; this.pathN = 0; this.lastDepth = 0;
+    this.history.fill(0);
+    var root = new Int32Array(1200), n = this.genLegal(root, 0);
+    if (n === 0) return -1;
+    if (n === 1) { this.lastDepth = 0; return root[0]; }
+    var best = root[this.rnd.nextInt(n)], lastVals = null, lastOrder = null;
+    for (var depth = 1; depth <= maxDepth; depth++) {
+      var alpha = -1e18, order = root.slice(0, 1200), on = n;
+      this.orderRoot(order, on, best);
+      var bv = -1e18, bm = order[0], dv = new Float64Array(on);
+      for (var i = 0; i < on; i++) {
+        var mv = order[i]; this.make(mv);
+        var o = this.outcomeInSearch(3 - this.side), v;
+        if (o !== 0) v = this.util(o, 3 - this.side, depth);
+        else {
+          this.pathH[this.pathN] = this.hh; this.pathL[this.pathN] = this.hl; this.pathN++;
+          var a = randomMargin > 0 ? -1e18 : alpha;
+          v = -this.negamax(depth - 1, -1e18, -a, 1);
+          this.pathN--;
+        }
+        this.unmake();
+        if (this.abort) break;
+        dv[i] = v;
+        if (v > bv) { bv = v; bm = mv; }
+        if (v > alpha) alpha = v;
+      }
+      if (this.abort) break;
+      best = bm; this.lastDepth = depth; this.lastScore = bv; lastVals = dv; lastOrder = order;
+      if (bv >= WIN / 2 || bv <= -WIN / 2) break;
+    }
+    if (randomMargin > 0 && lastVals !== null) {
+      var cand = [];
+      for (i = 0; i < lastVals.length; i++) if (lastVals[i] >= this.lastScore - randomMargin) cand.push(lastOrder[i]);
+      return cand[this.rnd.nextInt(cand.length)];
+    }
+    return best;
+  };
+  return { N: N, NS: NS, C: C, CORNER: CORNER, OUTER: OUTER, SPECIAL: SPECIAL, Game: Game, JRandom: JRandom, sq: sq, nm: nm, owner: owner, isKing: isKing, WIN: WIN };
+})();
+
+</script>
+<script>
+(function () {
+  'use strict';
+  var E = Engine, N = E.N, NS = E.NS;
+  var $ = function (id) { return document.getElementById(id); };
+  var LEVEL_NAMES = { 2000: 'Beginner', 10000: 'Easy', 50000: 'Medium', 200000: 'Strong', 800000: 'Expert' };
+  var S = { moves: [], mode: 'b', level: 50000, paused: false, result: null, sel: -1, aiBusy: false, info: '' };
+  var g, legal = [], pseudo = [], cells = [], lastCaps = [], worker = null, reqId = 0, autoTimer = null;
+
+  try { var saved = JSON.parse(localStorage.getItem('tafl-normand-ui') || '{}'); if (saved.mode) S.mode = saved.mode; if (saved.level) S.level = +saved.level; } catch (e) {}
+  function saveUi() { try { localStorage.setItem('tafl-normand-ui', JSON.stringify({ mode: S.mode, level: S.level })); } catch (e) {} }
+
+  // ---------- AI worker (same engine source)
+  function makeWorker() {
+    var src = $('engine').textContent + '\n;(' + function () {
+      var G = new Engine.Game(false);
+      self.onmessage = function (ev) {
+        var m = ev.data, t0 = Date.now();
+        G.setup(); for (var i = 0; i < m.moves.length; i++) G.play(m.moves[i]);
+        G.rnd = new Engine.JRandom(m.seed);
+        var mv = G.ply < 4 ? G.searchRoot(Math.min(m.budget, 20000), 2, 0.3) : G.searchRoot(m.budget, 64, 0);
+        self.postMessage({ id: m.id, move: mv, depth: G.lastDepth, score: G.lastScore, nodes: G.nodes, ms: Date.now() - t0 });
+      };
+    }.toString() + ')();';
+    var w = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    w.onmessage = onAiMove;
+    return w;
+  }
+  function stopAi() { if (worker && S.aiBusy) { worker.terminate(); worker = null; } S.aiBusy = false; clearTimeout(autoTimer); }
+
+  // ---------- game state
+  function rebuild() {
+    g = new E.Game(true); g.setup(); S.result = null; lastCaps = [];
+    for (var i = 0; i < S.moves.length; i++) { var o = g.play(S.moves[i]); if (o) S.result = describe(o); }
+    if (!S.result) checkEnd();
+    computeLegal();
+  }
+  function computeLegal() {
+    var buf = new Int32Array(1200), n = S.result ? 0 : g.genLegal(buf, 0); legal = Array.prototype.slice.call(buf, 0, n);
+    var pb = new Int32Array(1200), pn = S.result ? 0 : g.genPseudo(g.side, pb); pseudo = Array.prototype.slice.call(pb, 0, pn);
+  }
+  var NAME = { 1: 'Black', 2: 'White' };
+  function describe(o) {
+    if (o === 3) return { winner: 0, title: 'Draw', why: 'The same position occurred three times.' };
+    var kw = g.kpos[o];
+    if (kw >= 0 && E.CORNER[kw]) return { winner: o, title: NAME[o] + ' wins', why: 'The ' + (o === 1 ? 'black' : 'white') + ' king reached a corner.' };
+    if (!g.pairOnBoard() && g.kpos[3 - o] < 0) return { winner: o, title: NAME[o] + ' wins', why: g.edgeCapFlag ? 'King captured against the edge.' : 'King captured.' };
+    return { winner: o, title: NAME[o] + ' wins', why: NAME[3 - o] + ' cannot move.' };
+  }
+  function checkEnd() {
+    if (S.result) return;
+    var buf = new Int32Array(1200);
+    if (g.genLegal(buf, 0) === 0) {
+      var w = 3 - g.side, l = 3 - w, wm = g.winningMoves(w), pick = null, i;
+      for (i = 0; i < wm.length; i++) if (wm[i].type === 1) { pick = wm[i]; break; }
+      if (!pick) pick = wm[0];
+      var why = NAME[l] + ' has no defence left.';
+      if (pick) {
+        var f = pick.mv >> 8, to = pick.mv & 255, mvTxt = E.nm(f) + '-' + E.nm(to);
+        if (pick.type === 1) why = 'The ' + (w === 1 ? 'black' : 'white') + ' king will reach ' + E.nm(to) + ' (' + mvTxt + '): ' + why;
+        else if (pick.type === 2 || pick.type === 4) why = 'The ' + (l === 1 ? 'black' : 'white') + ' king will be captured' + (pick.type === 4 ? ' against the edge' : '') + ' (' + mvTxt + '): ' + why;
+        else why = NAME[l] + ' will be blocked (' + mvTxt + '): ' + why;
+        if (wm.length > 1) why += ' ' + wm.length + ' winning moves available.';
+      }
+      S.result = { winner: w, title: NAME[w] + ' wins', why: why, win: pick ? { from: pick.mv >> 8, to: pick.mv & 255, type: pick.type } : null };
+    } else if (g.ply >= 400) S.result = { winner: 0, title: 'Draw', why: 'The 400-move limit was reached.' };
+  }
+  function threatenedKing() { // king of the side to move that the opponent could capture or out-run next move
+    if (S.result) return { mask: 0 };
+    var t = g.winTypes(3 - g.side); return { mask: t };
+  }
+  function isHuman(p) { return S.mode === 'two' || (S.mode === 'b' && p === 1) || (S.mode === 'w' && p === 2); }
+
+  function playMove(mv) {
+    var before = new Int8Array(g.b);
+    var o = g.play(mv); S.moves.push(mv); S.sel = -1;
+    lastCaps = []; for (var s = 0; s < NS; s++) if (before[s] !== 0 && g.b[s] === 0 && s !== (mv >> 8) && !(before[s] === 5)) lastCaps.push(s);
+    if (o) S.result = describe(o); else checkEnd();
+    computeLegal(); render(); afterMove();
+  }
+  function afterMove() {
+    if (S.result) { S.aiBusy = false; return; }
+    if (!isHuman(g.side)) {
+      if (S.mode === 'auto') { if (S.paused) return; autoTimer = setTimeout(askAi, 380); } else askAi();
+    }
+  }
+  function askAi() {
+    if (S.result || isHuman(g.side) || S.aiBusy) return;
+    if (!worker) worker = makeWorker();
+    S.aiBusy = true; S.info = ''; reqId++;
+    worker.postMessage({ id: reqId, moves: S.moves, budget: S.level, seed: Math.floor(Math.random() * 2147483647) });
+    render();
+  }
+  function onAiMove(ev) {
+    var r = ev.data; if (r.id !== reqId) return; S.aiBusy = false;
+    if (r.move < 0) return;
+    S.info = (r.depth ? 'depth ' + r.depth + ' · ' : '') + (r.ms / 1000).toFixed(1) + ' s';
+    playMove(r.move);
+  }
+
+  // ---------- rendering
+  function buildBoard() {
+    var fr = $('frame'), r, c;
+    // coordinates column, board, letters row
+    var out = '';
+    for (r = 0; r < N; r++) out += '<div class="coord" style="grid-column:1;grid-row:' + (r + 2) + '">' + (N - r) + '</div>';
+    for (c = 0; c < N; c++) out += '<div class="coord" style="grid-row:13;grid-column:' + (c + 2) + '">' + String.fromCharCode(97 + c) + '</div>';
+    out += '<div class="board" id="board" role="grid" aria-label="Board"></div>';
+    fr.innerHTML = out;
+    var bd = $('board'), b2 = '';
+    for (r = 0; r < N; r++) for (c = 0; c < N; c++) {
+      var s = (N - 1 - r) * N + c, sp = E.SPECIAL[s] ? ' special' : '';
+      b2 += '<button class="cell' + sp + '" data-s="' + s + '" aria-label="' + E.nm(s) + '"></button>';
+    }
+    bd.innerHTML = b2; cells = [];
+    var all = bd.querySelectorAll('.cell'); for (var i = 0; i < all.length; i++) cells[+all[i].dataset.s] = all[i];
+    bd.addEventListener('click', function (ev) { var el = ev.target.closest('.cell'); if (el) clickCell(+el.dataset.s); });
+  }
+  function pieceHtml(v) {
+    if (v === 1) return '<span class="piece b"></span>';
+    if (v === 2) return '<span class="piece w"></span>';
+    if (v === 4) return '<span class="piece b king"></span>';
+    if (v === 3) return '<span class="piece w king"></span>';
+    if (v === 5) return '<span class="piece pair"></span>';
+    return '';
+  }
+  function render() {
+    var last = S.moves.length ? S.moves[S.moves.length - 1] : -1, selMoves = {}, selForbidden = {};
+    if (S.sel >= 0) {
+      for (var i = 0; i < legal.length; i++) if ((legal[i] >> 8) === S.sel) selMoves[legal[i] & 255] = 1;
+      for (i = 0; i < pseudo.length; i++) if ((pseudo[i] >> 8) === S.sel && !selMoves[pseudo[i] & 255]) selForbidden[pseudo[i] & 255] = 1;
+    }
+    var human = !S.result && isHuman(g.side) && !S.aiBusy, movable = {};
+    if (human) for (i = 0; i < pseudo.length; i++) movable[pseudo[i] >> 8] = 1;
+    var th = threatenedKing(), threatSq = -1;
+    if (th.mask & 6) threatSq = g.kpos[g.side];
+    for (var s = 0; s < NS; s++) {
+      var el = cells[s], v = g.b[s], h = pieceHtml(v);
+      if (selMoves[s]) h += '<span class="dot"></span>'; else if (selForbidden[s]) h += '<span class="no"></span>';
+      var win = S.result && S.result.win;
+      if (win && s === win.to) h += '<span class="winmark"></span>';
+      el.innerHTML = h;
+      el.classList.toggle('last', last >= 0 && (s === (last >> 8) || s === (last & 255)));
+      el.classList.toggle('sel', s === S.sel);
+      el.classList.toggle('can', human && (!!movable[s] || !!selMoves[s] || !!selForbidden[s]));
+      el.classList.toggle('threat', s === threatSq || !!(S.result && S.result.win && S.result.win.type !== 1 && S.result.win.type !== 8 && s === g.kpos[3 - S.result.winner]));
+      el.classList.toggle('winfrom', !!(S.result && S.result.win && s === S.result.win.from));
+      el.classList.toggle('capt', lastCaps.indexOf(s) >= 0);
+    }
+    // status
+    var st = $('status'), txt, warn = false;
+    if (S.result) txt = S.result.title + '. ' + S.result.why;
+    else {
+      var who = NAME[g.side];
+      if (S.aiBusy) txt = 'The AI is thinking for ' + who + '…';
+      else if (S.mode === 'auto' && S.paused) txt = 'Paused. ' + who + ' to move.';
+      else txt = who + ' to move' + (isHuman(g.side) && S.mode !== 'two' ? ' (you)' : '') + '.';
+      if (th.mask) {
+        var k = []; if (th.mask & 1) k.push('king to a corner'); if (th.mask & 2) k.push('king capture'); if (th.mask & 4) k.push('capture against the edge'); if (th.mask & 8) k.push('blockade');
+        txt += ' Threat: ' + k.join(', ') + '. You must stop it.'; warn = true;
+      }
+      if (g.ply === 0) txt = 'Black plays first. ' + (isHuman(1) ? 'Pick a piece, then the square it moves to.' : '');
+    }
+    st.textContent = txt; st.className = warn ? 'warn' : '';
+    $('counts').innerHTML = '<span class="swatch b"></span>' + g.cnt[1] + ' <span class="swatch w"></span>' + g.cnt[2] + ' · move ' + g.ply;
+    $('ai').textContent = S.info ? 'AI ' + LEVEL_NAMES[S.level] + ': ' + S.info : '';
+    var bn = $('banner'); bn.hidden = !S.result || S.bannerOff;
+    if (S.result) { $('bannerT').textContent = S.result.title; $('bannerS').textContent = S.result.why; }
+    $('pause').hidden = S.mode !== 'auto'; $('pause').textContent = S.paused ? 'Resume' : 'Pause';
+    $('undo').disabled = S.moves.length === 0 || S.mode === 'auto';
+    $('mode').value = S.mode; $('level').value = String(S.level);
+  }
+
+  // ---------- input
+  function clickCell(s) {
+    if (S.result || S.aiBusy || !isHuman(g.side)) return;
+    if (S.sel >= 0) {
+      var mv = S.sel * 256 + s;
+      if (legal.indexOf(mv) >= 0) { playMove(mv); return; }
+      if (pseudo.indexOf(mv) >= 0) { flash('Not allowed: this move leaves your opponent an immediate win.'); return; }
+    }
+    var mine = false; for (var i = 0; i < pseudo.length; i++) if ((pseudo[i] >> 8) === s) { mine = true; break; }
+    S.sel = (mine && S.sel !== s) ? s : -1; render();
+  }
+  var flashTimer = null;
+  function flash(msg) { var st = $('status'); st.textContent = msg; st.className = 'warn'; clearTimeout(flashTimer); flashTimer = setTimeout(render, 2200); }
+
+  function newGame() { stopAi(); S.moves = []; S.sel = -1; S.info = ''; S.paused = false; S.bannerOff = false; rebuild(); render(); afterMove(); }
+  $('new').onclick = newGame;
+  $('banner').onclick = function () { S.bannerOff = true; render(); };
+  $('mode').onchange = function () { S.mode = this.value; saveUi(); stopAi(); S.sel = -1; S.paused = false; render(); afterMove(); };
+  $('level').onchange = function () { S.level = +this.value; saveUi(); };
+  $('undo').onclick = function () {
+    if (!S.moves.length) return; stopAi();
+    if (S.mode === 'two') S.moves.pop();
+    else { do { S.moves.pop(); } while (S.moves.length && !isHumanAfter(S.moves.length)); }
+    S.sel = -1; S.info = ''; S.bannerOff = false; rebuild(); render(); afterMove();
+  };
+  function isHumanAfter(nMoves) { var side = nMoves % 2 === 0 ? 1 : 2; return isHuman(side); }
+  $('pause').onclick = function () { S.paused = !S.paused; if (S.paused) clearTimeout(autoTimer); render(); if (!S.paused) afterMove(); };
+  $('help').onclick = function () { $('rules').hidden = false; };
+  $('closeRules').onclick = function () { $('rules').hidden = true; };
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { if (!$('rules').hidden) $('rules').hidden = true; else if (S.sel >= 0) { S.sel = -1; render(); } } });
+
+  // ---------- boot (keeps the game across page updates)
+  function start(data) {
+    if (data && data.moves) { S.moves = data.moves.slice(); S.mode = data.mode || S.mode; S.level = data.level || S.level; S.paused = !!data.paused; }
+    buildBoard(); rebuild(); render(); afterMove();
+  }
+  if (window.claude && window.claude.hot && window.claude.hot.snapshot) window.claude.hot.snapshot(function () { return { moves: S.moves, mode: S.mode, level: S.level, paused: S.paused }; });
+  if (window.claude && window.claude.hot && window.claude.hot.ready) window.claude.hot.ready(start); else start((window.claude && window.claude.hot && window.claude.hot.data) || {});
+})();
+</script>
+
+</body>
+</html>
