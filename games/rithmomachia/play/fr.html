@@ -1,0 +1,763 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="description" content="Jouez à la rithmomachie moderne en ligne contre l'ordinateur ou à deux : alignez trois nombres en progression dans le camp adverse.">
+<link rel="icon" href="/assets/favicon.svg" type="image/svg+xml">
+<link rel="canonical" href="https://guillaume-enguehard.github.io/games/rithmomachia/play/fr.html">
+<link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/rithmomachia/play/">
+<link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/rithmomachia/play/fr.html">
+<title>RITHMOMACHIE MODERNE · Jouer en ligne</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@500;600;700&family=Source+Sans+3:wght@400;600&display=swap">
+<style>
+[hidden] { display: none !important; }
+/* Plateau de bois, pièces d'ivoire et d'ébène, filet de laiton : une table d'étude plutôt qu'un écran de jeu.
+   Mise en page : un écran, plateau carré maximal à gauche, colonne de contrôle étroite à droite (empilée sous le plateau en portrait). */
+:root {
+  --bg: #e6e9e6;
+  --panel: #f3f5f2;
+  --fg: #1c2421;
+  --muted: #5d6a64;
+  --rule: #c5ccc6;
+  --board: #e8c486;
+  --mark: #9a5a12;
+  --grid: #4a3218;
+  --ivory: #f8f1de;
+  --ivory-ink: #2a1d14;
+  --ivory-edge: #cdb98c;
+  --ebony: #2b211c;
+  --ebony-ink: #f3ead6;
+  --ebony-stroke: #6b5443;
+  --ebony-edge: #0f0b08;
+  --brass: #a8701a;
+  --danger: #b3362c;
+  --font-num: "Cormorant Garamond", "Iowan Old Style", "Palatino Linotype", Georgia, serif;
+  --font-ui: "Source Sans 3", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #141918; --panel: #1c2321; --fg: #e4e8e3; --muted: #9aa69f; --rule: #34403c;
+    --board: #c9a46b; --grid: #2e1f0e; --mark: #7c3f06; --ivory: #efe6cf; --ivory-ink: #2a1d14; --ivory-edge: #b9a57a;
+    --ebony: #2b211c; --ebony-ink: #efe4cc; --ebony-stroke: #7a604c; --ebony-edge: #0c0907; --brass: #d8a446; --danger: #e0685c; color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #141918; --panel: #1c2321; --fg: #e4e8e3; --muted: #9aa69f; --rule: #34403c;
+  --board: #c9a46b; --grid: #2e1f0e; --mark: #7c3f06; --ivory: #efe6cf; --ivory-ink: #2a1d14; --ivory-edge: #b9a57a;
+  --ebony: #2b211c; --ebony-ink: #efe4cc; --ebony-stroke: #7a604c; --ebony-edge: #0c0907; --brass: #d8a446; --danger: #e0685c; color-scheme: dark;
+}
+html, body { height: 100%; }
+body { margin: 0; background: var(--bg); color: var(--fg); font-family: var(--font-ui); overflow: hidden; }
+* { box-sizing: border-box; }
+.app {
+  height: 100%;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 15.5rem;
+  gap: 28px;
+  max-width: calc(100vh + 15.5rem + 40px);
+  margin-inline: auto;
+  padding-block: 14px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.boardwrap { min-width: 0; min-height: 0; display: grid; place-items: center; }
+#board { display: block; touch-action: manipulation; user-select: none; -webkit-user-select: none; border-radius: 3px; box-shadow: 0 0 0 1px var(--rule); }
+#board .sq { cursor: pointer; }
+.side { min-width: 0; min-height: 0; display: flex; flex-direction: column; gap: 14px; justify-content: center; }
+.brand { display: grid; gap: 2px; }
+.brand h1 { margin: 0; font-family: var(--font-num); font-weight: 600; font-size: 1.7rem; letter-spacing: 0.02em; line-height: 1; }
+.brand h1 { font-size: 1.32rem; letter-spacing: 0.05em; }
+.brand span a { color: inherit; }
+.brand span { font-size: 0.72rem; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+.score { display: grid; gap: 6px; }
+.player { display: grid; grid-template-columns: 22px 1fr auto; align-items: center; gap: 8px; padding: 6px 8px; border-radius: 6px; border: 1px solid transparent; }
+.player.turn { border-color: var(--rule); background: var(--panel); }
+.player .name { font-weight: 600; font-size: 0.95rem; }
+.player .tag { font-size: 0.7rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--brass); }
+.vals { display: flex; gap: 4px; grid-column: 2 / 4; align-items: center; }
+.val { min-width: 1.45rem; height: 1.3rem; padding: 0 3px; border-radius: 4px; border: 1px solid var(--rule); font-family: var(--font-num); font-weight: 700; font-size: 0.95rem; line-height: 1.2rem; text-align: center; font-variant-numeric: tabular-nums; }
+.val.gone { opacity: 0.35; text-decoration: line-through; }
+.val.warn { border-color: var(--danger); color: var(--danger); }
+.vals .count { margin-left: auto; }
+.count { font-variant-numeric: tabular-nums; font-size: 0.85rem; color: var(--muted); }
+.status { font-size: 0.95rem; line-height: 1.35; min-height: 2.7em; }
+.status b { font-weight: 600; }
+.last { font-size: 0.82rem; color: var(--muted); line-height: 1.35; min-height: 2.2em; }
+.last .cap { color: var(--danger); }
+.nocap { font-size: 0.78rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.controls { display: grid; gap: 8px; }
+.row { display: flex; gap: 6px; flex-wrap: wrap; }
+label.sel { display: grid; gap: 3px; font-size: 0.72rem; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+select, button { font: inherit; font-size: 0.88rem; color: var(--fg); background: var(--panel); border: 1px solid var(--rule); border-radius: 6px; padding: 6px 9px; }
+select { width: 100%; text-transform: none; letter-spacing: 0; }
+button { cursor: pointer; flex: 1 1 auto; }
+button:hover:not(:disabled) { border-color: var(--muted); }
+button:disabled { opacity: 0.45; cursor: default; }
+button.primary { border-color: var(--brass); }
+:focus-visible { outline: 2px solid var(--brass); outline-offset: 2px; }
+.overlay { position: fixed; inset: 0; background: color-mix(in srgb, var(--bg) 70%, transparent); display: grid; place-items: center; padding: max(16px, env(safe-area-inset-top, 0px)) max(16px, env(safe-area-inset-right, 0px)) max(16px, env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); z-index: 20; }
+.card { background: var(--panel); border: 1px solid var(--rule); border-radius: 10px; max-width: 38rem; width: 100%; max-height: 100%; overflow: auto; padding: 22px 24px; box-shadow: 0 12px 40px rgba(0,0,0,0.18); }
+.card h2 { font-family: var(--font-num); font-weight: 600; font-size: 1.6rem; margin: 0 0 10px; text-wrap: balance; }
+.card h3 { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin: 16px 0 6px; }
+.card p, .card li { font-size: 0.92rem; line-height: 1.45; max-width: 65ch; }
+.card ol, .card ul { padding-left: 1.2rem; margin: 0; display: grid; gap: 4px; }
+.card table { border-collapse: collapse; font-size: 0.85rem; width: 100%; }
+.card th, .card td { text-align: left; padding: 4px 8px 4px 0; border-bottom: 1px solid var(--rule); vertical-align: top; }
+.card th { font-weight: 600; }
+.card .close { margin-top: 16px; display: flex; justify-content: flex-end; }
+.card .close button { flex: 0 0 auto; }
+.result-card { text-align: center; max-width: 22rem; }
+.result-card p { margin: 0 auto 14px; }
+@media (max-aspect-ratio: 11/10), (max-width: 640px) {
+  .app { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) auto; gap: 12px; padding-block: 8px; max-width: none; }
+  .boardwrap { align-items: center; }
+  .side { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 12px; justify-content: stretch; }
+  .brand { display: none; }
+  .score { grid-column: 1 / 2; grid-row: 1 / 3; gap: 2px; }
+  .player { padding: 3px 6px; }
+  .status { grid-column: 2 / 3; min-height: 0; font-size: 0.86rem; }
+  .last { grid-column: 2 / 3; min-height: 0; font-size: 0.76rem; }
+  .nocap { display: none; }
+  .controls { grid-column: 1 / 3; grid-template-columns: 1fr 1fr; }
+  .controls .row { grid-column: 1 / 3; }
+  .vals .count { display: none; }
+  label.sel { font-size: 0.65rem; }
+  select, button { padding: 5px 7px; font-size: 0.82rem; }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .flash { animation: flash 0.9s ease-out; }
+  @keyframes flash { from { opacity: 1; } to { opacity: 0.25; } }
+}
+</style>
+
+<div class="app">
+  <div class="boardwrap" id="boardwrap"><svg id="board" viewBox="0 0 800 800" role="img" aria-label="Plateau de rithmomachie"></svg></div>
+  <aside class="side">
+    <div class="brand"><h1>RITHMOMACHIE MODERNE</h1><span><a href="./" hreflang="en" lang="en">English</a></span></div>
+    <div class="score">
+      <div class="player" id="p0"><svg width="20" height="20" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="var(--ivory)" stroke="var(--fg)" stroke-width="6"/></svg><span class="name">Blancs</span><span class="tag" id="t0">au trait</span><div class="vals" id="vals0"></div></div>
+      <div class="player" id="p1"><svg width="20" height="20" viewBox="0 0 100 100"><circle cx="50" cy="50" r="38" fill="var(--ebony)" stroke="var(--fg)" stroke-width="6"/></svg><span class="name">Noirs</span><span class="tag" id="t1">au trait</span><div class="vals" id="vals1"></div></div>
+    </div>
+    <div class="status" id="status" aria-live="polite"></div>
+    <div class="last" id="last"></div>
+    <div class="nocap" id="nocap"></div>
+    <div class="controls">
+      <label class="sel" for="mode">Mode
+        <select id="mode">
+          <option value="ai1">Ordinateur : Noirs</option>
+          <option value="ai0">Ordinateur : Blancs</option>
+          <option value="human">Deux joueurs</option>
+        </select>
+      </label>
+      <label class="sel" for="level">Niveau
+        <select id="level">
+          <option value="1">Débutant</option>
+          <option value="2" selected>Moyen</option>
+          <option value="3">Fort</option>
+          <option value="4">Expert (lent)</option>
+        </select>
+      </label>
+      <div class="row">
+        <button id="newgame" class="primary">Nouvelle partie</button>
+        <button id="pause" hidden>Pause</button>
+        <button id="undo">Annuler</button>
+        <button id="rulesbtn">Règles</button>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<div class="overlay" id="rules" hidden>
+  <div class="card" role="dialog" aria-labelledby="rules-title">
+    <h2 id="rules-title">Règles en une minute</h2>
+    <p>Chaque camp a 8 cercles, 4 triangles et 4 carrés portant les nombres 2, 3, 4 et 6, disposés comme dans la rithmomachie médiévale : carrés aux ailes, triangles au centre, cercles en pointe. Les Blancs commencent.</p>
+    <h3>But : le triomphe</h3>
+    <p>Gagne qui aligne <b>trois de ses pièces côte à côte</b> (en rangée, en colonne ou en diagonale), <b>dans la moitié adverse</b> du plateau, dont les nombres forment une progression : <b>2-3-4, 2-4-6, 2-3-6 ou 3-4-6</b>, dans un sens ou dans l'autre. Le nombre du milieu est toujours 3 ou 4.</p>
+    <p>Un joueur à qui il ne reste plus trois nombres différents ne peut plus triompher : il a perdu. Un joueur qui ne peut plus jouer a perdu. Après 60 demi-coups sans prise, la partie est nulle.</p>
+    <h3>Déplacement</h3>
+    <p>En ligne droite, dans les 8 directions, sans sauter : le cercle d'1 case, le triangle de 1 ou 2, le carré de 1, 2 ou 3.</p>
+    <h3>Les trois prises</h3>
+    <ol>
+      <li><b>Rencontre</b> (égalité) : se poser sur une pièce ennemie de même nombre mais <b>d'une autre forme</b>. Deux pièces identiques ne se prennent pas.</li>
+      <li><b>Assaut</b> (multiplication ou division) : se poser sur une pièce ennemie qui vaut le double ou la moitié de la sienne après 2 cases parcourues, le triple ou le tiers après 3.</li>
+      <li><b>Embuscade</b> (addition ou soustraction) : après le coup, la pièce jouée et une autre pièce amie encadrent une ennemie sur une ligne ; si la somme ou la différence de leurs deux nombres égale le sien, elle est prise.</li>
+    </ol>
+    <p>Prendre n'est jamais obligatoire : on prend pour ouvrir le passage, défendre ou priver l'adversaire de ses nombres.</p>
+    <h3>Qui peut prendre quoi</h3>
+    <table>
+      <tr><th>Cible</th><th>Rencontre</th><th>Assaut (2 cases · 3 cases)</th><th>Embuscade</th></tr>
+      <tr><td>2</td><td>un 2 d'une autre forme</td><td>un 4 · un 6</td><td>4 − 2, 6 − 4</td></tr>
+      <tr><td>3</td><td>un 3 d'une autre forme</td><td>un 6 · —</td><td>6 − 3</td></tr>
+      <tr><td>4</td><td>un 4 d'une autre forme</td><td>un 2 · —</td><td>2 + 2, 6 − 2</td></tr>
+      <tr><td>6</td><td>un 6 d'une autre forme</td><td>un 3 · un 2</td><td>2 + 4, 3 + 3</td></tr>
+    </table>
+    <h3>Sur le plateau</h3>
+    <p>Touchez une pièce : les points montrent ses coups, les anneaux rouges les coups qui prennent. Au survol d'un anneau, les pièces qui tomberaient sont cerclées. Le trait en pointillés marque le milieu du plateau. Sous chaque camp, les nombres qu'il possède encore : un nombre barré est perdu.</p>
+    <p>« Annuler » revient d'un coup ; contre l'ordinateur, il revient jusqu'à votre dernier coup.</p>
+    <div class="close"><button id="closerules">Fermer</button></div>
+  </div>
+</div>
+
+<div class="overlay" id="result" hidden>
+  <div class="card result-card" role="dialog" aria-labelledby="result-title">
+    <h2 id="result-title"></h2>
+    <p id="result-text"></p>
+    <div class="row"><button id="again" class="primary">Rejouer</button><button id="look">Voir le plateau</button></div>
+  </div>
+</div>
+
+<script id="engine">
+// ---- Règles de la référence « triomphe » (identiques au moteur C++ et à l'implémentation Python des simulations) ----
+var N = 8, NOCAP = 60, RANGE = [1, 2, 3], ZONE = 4;
+var DX = [1, -1, 0, 0, 1, 1, -1, -1], DY = [0, 0, 1, -1, 1, -1, 1, -1];
+function OWN(p) { return (p >> 6) & 1; }
+function SHP(p) { return (p >> 4) & 3; }
+function VAL(p) { return p & 15; }
+function MK(o, s, v) { return (o << 6) | (s << 4) | v; }
+// disposition des Blancs [colonne, rangée, forme (0 cercle, 1 triangle, 2 carré), nombre] ; les Noirs en miroir
+var SETUP = [[0, 0, 2, 6], [1, 0, 2, 3], [6, 0, 2, 2], [7, 0, 2, 4],
+             [2, 1, 1, 4], [3, 1, 1, 2], [4, 1, 1, 3], [5, 1, 1, 6],
+             [0, 1, 0, 3], [1, 1, 0, 6], [6, 1, 0, 6], [7, 1, 0, 3],
+             [2, 2, 0, 2], [3, 2, 0, 4], [4, 2, 0, 4], [5, 2, 0, 2]];
+function initial() {
+  var b = new Int8Array(64);
+  for (var i = 0; i < SETUP.length; i++) {
+    var P = SETUP[i];
+    b[P[1] * 8 + P[0]] = MK(0, P[2], P[3]);
+    b[(7 - P[1]) * 8 + P[0]] = MK(1, P[2], P[3]);
+  }
+  return { b: b, cap: [0, 0], turn: 0, nocap: 0, ply: 0, result: -1, reason: '' };
+}
+function onB(x, y) { return x >= 0 && y >= 0 && x < 8 && y < 8; }
+// la pièce p peut-elle prendre q en parcourant k cases ? rencontre (même nombre, autre forme) ou assaut (×k, ÷k)
+function canTake(p, q, k) {
+  var v = VAL(p), w = VAL(q);
+  if (w === v) return SHP(q) !== SHP(p);
+  return k >= 2 && (w === v * k || v === w * k);
+}
+function legal(s) {
+  var mv = [], me = s.turn, b = s.b;
+  for (var sq = 0; sq < 64; sq++) {
+    var p = b[sq]; if (!p || OWN(p) !== me) continue;
+    var x = sq & 7, y = sq >> 3, R = RANGE[SHP(p)];
+    for (var d = 0; d < 8; d++) {
+      for (var k = 1; k <= R; k++) {
+        var tx = x + DX[d] * k, ty = y + DY[d] * k;
+        if (!onB(tx, ty)) break;
+        var t = ty * 8 + tx, q = b[t];
+        if (!q) { mv.push(sq * 64 + t); continue; }
+        if (OWN(q) !== me && canTake(p, q, k)) mv.push(sq * 64 + t);
+        break;
+      }
+    }
+  }
+  return mv;
+}
+function hasMove(s) {
+  var me = s.turn, b = s.b;
+  for (var sq = 0; sq < 64; sq++) {
+    var p = b[sq]; if (!p || OWN(p) !== me) continue;
+    var x = sq & 7, y = sq >> 3, R = RANGE[SHP(p)];
+    for (var d = 0; d < 8; d++) for (var k = 1; k <= R; k++) {
+      var tx = x + DX[d] * k, ty = y + DY[d] * k;
+      if (!onB(tx, ty)) break;
+      var q = b[ty * 8 + tx];
+      if (!q) return true;
+      if (OWN(q) !== me && canTake(p, q, k)) return true;
+      break;
+    }
+  }
+  return false;
+}
+// embuscade causée par la pièce posée en 'to' ; plateau b déjà modifié
+function passive(b, to, me) {
+  var x = to & 7, y = to >> 3, v = VAL(b[to]), out = [];
+  for (var d = 0; d < 8; d++) {
+    var ex = x + DX[d], ey = y + DY[d], fx = x + 2 * DX[d], fy = y + 2 * DY[d];
+    if (!onB(fx, fy)) continue;
+    var e = b[ey * 8 + ex], f = b[fy * 8 + fx];
+    if (e && f && OWN(e) !== me && OWN(f) === me && (VAL(e) === v + VAL(f) || VAL(e) === Math.abs(v - VAL(f)))) out.push([ey * 8 + ex, 'embuscade']);
+  }
+  return out;
+}
+// ---- triomphe : trois pièces contiguës alignées dans la moitié adverse, en progression ----
+function inZone(o, y) { return o === 0 ? y >= 8 - ZONE : y < ZONE; }
+var LINES = [[], []], ZSQ = [[], []];
+(function () {
+  var TD = [[1, 0], [0, 1], [1, 1], [1, -1]];
+  for (var o = 0; o < 2; o++) for (var i = 0; i < 64; i++) {
+    var x = i & 7, y = i >> 3; if (!inZone(o, y)) continue;
+    ZSQ[o].push(i);
+    for (var d = 0; d < 4; d++) {
+      var x3 = x + 2 * TD[d][0], y3 = y + 2 * TD[d][1], y2 = y + TD[d][1];
+      if (!onB(x3, y3) || !inZone(o, y2) || !inZone(o, y3)) continue;
+      LINES[o].push([i, y2 * 8 + x + TD[d][0], y3 * 8 + x3]);
+    }
+  }
+})();
+function prog(a, b, c) { return a !== c && (a + c === 2 * b || 2 * a * c === b * (a + c) || a * c === b * b); }
+function triumphLine(b, o) {
+  var L = LINES[o];
+  for (var i = 0; i < L.length; i++) {
+    var p = b[L[i][0]], q = b[L[i][1]], r = b[L[i][2]];
+    if (p && q && r && OWN(p) === o && OWN(q) === o && OWN(r) === o && prog(VAL(p), VAL(q), VAL(r))) return L[i];
+  }
+  return null;
+}
+function valuesLeft(b, o) { var seen = {}, n = 0; for (var i = 0; i < 64; i++) { var p = b[i]; if (p && OWN(p) === o && !seen[VAL(p)]) { seen[VAL(p)] = 1; n++; } } return n; }
+function applyMove(s, m) {
+  var from = m >> 6, to = m & 63, b = s.b.slice(), me = s.turn, p = b[from], caps = [];
+  if (b[to]) caps.push([to, b[to], VAL(b[to]) === VAL(p) ? 'rencontre' : 'assaut']);
+  b[to] = p; b[from] = 0;
+  var pas = passive(b, to, me);
+  for (var i = 0; i < pas.length; i++) { caps.push([pas[i][0], b[pas[i][0]], pas[i][1]]); }
+  for (var j = 0; j < pas.length; j++) b[pas[j][0]] = 0;
+  var cap = [s.cap[0], s.cap[1]]; cap[me] += caps.length;
+  var t = { b: b, cap: cap, turn: me ^ 1, nocap: caps.length ? 0 : s.nocap + 1, ply: s.ply + 1, result: -1, reason: '', last: { from: from, to: to, caps: caps, mover: me } };
+  var line = triumphLine(b, me);
+  if (line) { t.result = me; t.reason = 'triomphe'; t.line = line; }
+  else if (valuesLeft(b, me ^ 1) < 3) { t.result = me; t.reason = 'epuisement'; }
+  else if (!hasMove(t)) { t.result = me; t.reason = 'bloque'; }
+  else if (t.nocap >= NOCAP) { t.result = 2; t.reason = 'nocap'; }
+  else if (t.ply >= 600) { t.result = 2; t.reason = 'limite'; }
+  return t;
+}
+// ---- IA : alpha-bêta + quiescence (mêmes heuristiques que l'agent 'ab' des simulations) ----
+function fastCaps(s, m) {
+  var from = m >> 6, to = m & 63, b = s.b, me = s.turn, v = VAL(b[from]), n = b[to] ? 1 : 0;
+  var x = to & 7, y = to >> 3, seen = [];
+  function own(sq) { if (sq === from) return false; if (sq === to) return true; var q = b[sq]; return q && OWN(q) === me; }
+  function enemy(sq) { if (sq === to || sq === from) return 0; var q = b[sq]; return (q && OWN(q) !== me) ? q : 0; }
+  for (var d = 0; d < 8; d++) {
+    var ex = x + DX[d], ey = y + DY[d], fx = x + 2 * DX[d], fy = y + 2 * DY[d];
+    if (!onB(fx, fy)) continue;
+    var e = enemy(ey * 8 + ex), fsq = fy * 8 + fx;
+    if (e && fsq !== to && own(fsq) && (VAL(e) === v + VAL(b[fsq]) || VAL(e) === Math.abs(v - VAL(b[fsq])))) seen.push(ey * 8 + ex);
+  }
+  return n + seen.length;
+}
+function countMoves(s, me) {
+  var nm = 0, nc = 0, b = s.b;
+  for (var sq = 0; sq < 64; sq++) {
+    var p = b[sq]; if (!p || OWN(p) !== me) continue;
+    var x = sq & 7, y = sq >> 3, R = RANGE[SHP(p)];
+    for (var d = 0; d < 8; d++) for (var k = 1; k <= R; k++) {
+      var tx = x + DX[d] * k, ty = y + DY[d] * k;
+      if (!onB(tx, ty)) break;
+      var q = b[ty * 8 + tx];
+      if (!q) { nm++; continue; }
+      if (OWN(q) !== me && canTake(p, q, k)) { nm++; nc++; }
+      break;
+    }
+  }
+  return [nm, nc];
+}
+var VALS = [2, 3, 4, 6];
+// potentiel de triomphe : pièces avancées et alignements à une pièce près
+function triumphTerm(b, o) {
+  var t = 0, Z = ZSQ[o], L = LINES[o];
+  for (var i = 0; i < Z.length; i++) { var p = b[Z[i]]; if (p && OWN(p) === o) t += 10; }
+  for (var j = 0; j < L.length; j++) {
+    var own = 0, emp = -1, vv = [0, 0, 0], bad = false;
+    for (var k = 0; k < 3 && !bad; k++) { var q = b[L[j][k]]; if (!q) { if (emp >= 0) bad = true; emp = k; } else if (OWN(q) !== o) bad = true; else { own++; vv[k] = VAL(q); } }
+    if (bad || own !== 2) continue;
+    for (var w = 0; w < 4; w++) { vv[emp] = VALS[w]; if (prog(vv[0], vv[1], vv[2])) { t += 40; break; } }
+  }
+  return t;
+}
+var AI = { nodes: 0, deadline: 0, aborted: false };
+function evalS(s) {
+  var me = s.turn, a = countMoves(s, me), o = countMoves(s, me ^ 1);
+  return (s.cap[me] - s.cap[me ^ 1]) * 60 + triumphTerm(s.b, me) - triumphTerm(s.b, me ^ 1) + (a[0] - o[0]) + 4 * (a[1] - o[1]);
+}
+function term(s, ply) { return s.result === 2 ? 0 : (s.result === s.turn ? 100000 - ply : -100000 + ply); }
+function tick() { if ((++AI.nodes & 1023) === 0 && Date.now() > AI.deadline) AI.aborted = true; return AI.aborted; }
+function qsearch(s, alpha, beta, qd, ply) {
+  if (tick()) return 0;
+  if (s.result >= 0) return term(s, ply);
+  var stand = evalS(s);
+  if (qd === 0 || stand >= beta) return stand;
+  if (stand > alpha) alpha = stand;
+  var mv = legal(s), ord = [];
+  for (var i = 0; i < mv.length; i++) { var k = fastCaps(s, mv[i]); if (k) ord.push([k, mv[i]]); }
+  ord.sort(function (a, b) { return b[0] - a[0]; });
+  for (var j = 0; j < ord.length; j++) {
+    var sc = -qsearch(applyMove(s, ord[j][1]), -beta, -alpha, qd - 1, ply + 1);
+    if (sc >= beta) return sc;
+    if (sc > alpha) alpha = sc;
+  }
+  return alpha;
+}
+function search(s, d, alpha, beta, ply) {
+  if (tick()) return 0;
+  if (s.result >= 0) return term(s, ply);
+  if (d === 0) return qsearch(s, alpha, beta, 4, ply);
+  var mv = legal(s), ord = [];
+  for (var i = 0; i < mv.length; i++) ord.push([fastCaps(s, mv[i]), mv[i]]);
+  ord.sort(function (a, b) { return b[0] - a[0]; });
+  var best = -1e9;
+  for (var j = 0; j < ord.length; j++) {
+    var sc = -search(applyMove(s, ord[j][1]), d - 1, -beta, -alpha, ply + 1);
+    if (AI.aborted) return 0;
+    if (sc > best) best = sc;
+    if (sc > alpha) alpha = sc;
+    if (alpha >= beta) break;
+  }
+  return best;
+}
+// niveau : profondeur, bruit (aléa des choix proches), temps max en ms
+var LEVELS = { 1: [1, 60, 2000], 2: [2, 6, 5000], 3: [3, 3, 10000], 4: [4, 3, 20000] };
+function chooseMove(s, level) {
+  var cfg = LEVELS[level] || LEVELS[2], depth = cfg[0], noise = cfg[1];
+  AI.nodes = 0; AI.aborted = false; AI.deadline = Date.now() + cfg[2];
+  var mv = legal(s), score = [], order = [];
+  for (var i = 0; i < mv.length; i++) { score.push(fastCaps(s, mv[i]) * 100); order.push(i); }
+  var chosen = mv[0];
+  for (var d = 1; d <= depth; d++) {
+    order.sort(function (a, b) { return score[b] - score[a]; });
+    var alpha = -1e9, beta = 1e9, bestv = -1e18, bm = mv[order[0]], newScore = score.slice(), last = d === depth;
+    for (var j = 0; j < order.length; j++) {
+      var idx = order[j], lo = last ? alpha - noise - 1 : alpha;
+      var sc = -search(applyMove(s, mv[idx]), d - 1, -beta, -lo, 1);
+      if (AI.aborted) break;
+      newScore[idx] = sc;
+      var v = sc + (last ? noise * Math.random() : 0);
+      if (v > bestv) { bestv = v; bm = mv[idx]; }
+      if (sc > alpha) alpha = sc;
+    }
+    if (AI.aborted) break;
+    score = newScore; chosen = bm;
+  }
+  return chosen;
+}
+</script>
+
+<script>
+(function () {
+  var svg = document.getElementById('board');
+  var NS = 'http://www.w3.org/2000/svg';
+  var hist = [], st = initial(), sel = -1, hoverTarget = -1, thinking = false, worker = null, aiToken = 0;
+  var modeEl = document.getElementById('mode'), levelEl = document.getElementById('level');
+  var SHAPE_NAME = ['cercle', 'triangle', 'carré'];
+  function sqName(sq) { return 'abcdefgh'[sq & 7] + ((sq >> 3) + 1); }
+
+  // ---------- persistance (commodité locale, facultative) ----------
+  function save() {
+    try {
+      localStorage.setItem('rm-site-game', JSON.stringify({ hist: hist.map(ser), st: ser(st), mode: modeEl.value, level: levelEl.value }));
+    } catch (e) {}
+  }
+  function ser(s) { return { b: Array.prototype.slice.call(s.b), cap: s.cap, turn: s.turn, nocap: s.nocap, ply: s.ply, result: s.result, reason: s.reason, last: s.last || null, line: s.line || null }; }
+  function des(o) { return { b: Int8Array.from(o.b), cap: o.cap, turn: o.turn, nocap: o.nocap, ply: o.ply, result: o.result, reason: o.reason, last: o.last, line: o.line || null }; }
+  function load(data) {
+    if (!data) return;
+    try { st = des(data.st); hist = data.hist.map(des); modeEl.value = (data.mode && data.mode !== 'auto') ? data.mode : 'ai1'; levelEl.value = data.level || '2'; } catch (e) { st = initial(); hist = []; }
+  }
+  window.claude && window.claude.hot && window.claude.hot.snapshot && window.claude.hot.snapshot(function () { return { hist: hist.map(ser), st: ser(st), mode: modeEl.value, level: levelEl.value }; });
+
+  // ---------- IA en tâche de fond ----------
+  try {
+    var src = document.getElementById('engine').textContent +
+      '\nonmessage=function(e){var d=e.data;var s={b:Int8Array.from(d.s.b),cap:d.s.cap,turn:d.s.turn,nocap:d.s.nocap,ply:d.s.ply,result:d.s.result};postMessage({token:d.token,move:chooseMove(s,d.level)});};';
+    worker = new Worker(URL.createObjectURL(new Blob([src], { type: 'text/javascript' })));
+    worker.onmessage = function (e) { onAIMove(e.data.token, e.data.move); };
+    worker.onerror = function () { worker = null; };
+  } catch (e) { worker = null; }
+
+  var paused = false, AUTO_DELAY = 650, pauseEl = document.getElementById('pause');
+  function auto() { return modeEl.value === 'auto'; }
+  function aiSide() { var m = modeEl.value; return m === 'ai1' ? 1 : m === 'ai0' ? 0 : -1; }
+  function isAI(side) { return auto() || side === aiSide(); }
+  function flipped() { return aiSide() === 0; }
+  function maybeAI() {
+    if (st.result >= 0 || !isAI(st.turn) || (auto() && paused)) return;
+    thinking = true; render();
+    var token = ++aiToken, level = +levelEl.value, s0 = ser(st);
+    var go = function () {
+      if (token !== aiToken) return;
+      if (worker) worker.postMessage({ token: token, level: level, s: s0 });
+      else setTimeout(function () { onAIMove(token, chooseMove(des(s0), level)); }, 30);
+    };
+    if (auto() && hist.length) setTimeout(go, AUTO_DELAY); else go();
+  }
+  function onAIMove(token, move) {
+    if (token !== aiToken) return;
+    thinking = false;
+    if (st.result >= 0 || !isAI(st.turn) || (auto() && paused)) { render(); return; }
+    play(move);
+  }
+  function setPaused(v) { paused = v; pauseEl.textContent = paused ? 'Reprendre' : 'Pause'; if (paused) { aiToken++; thinking = false; } render(); if (!paused) maybeAI(); }
+  pauseEl.onclick = function () { setPaused(!paused); };
+
+  // ---------- jeu ----------
+  function play(m) {
+    hist.push(st);
+    st = applyMove(st, m);
+    sel = -1; hoverTarget = -1;
+    render(); save();
+    if (st.result >= 0) showResult(); else maybeAI();
+  }
+  function movesFrom(sq) { return legal(st).filter(function (m) { return (m >> 6) === sq; }); }
+  function onSquare(sq) {
+    if (st.result >= 0 || thinking || isAI(st.turn)) return;
+    var p = st.b[sq];
+    if (sel >= 0) {
+      var m = movesFrom(sel).filter(function (mm) { return (mm & 63) === sq; });
+      if (m.length) { play(m[0]); return; }
+    }
+    if (p && OWN(p) === st.turn && movesFrom(sq).length) sel = (sel === sq ? -1 : sq);
+    else sel = -1;
+    hoverTarget = -1; render();
+  }
+
+  // ---------- dessin ----------
+  function el(name, attrs, parent) {
+    var e = document.createElementNS(NS, name);
+    for (var k in attrs) e.setAttribute(k, attrs[k]);
+    if (parent) parent.appendChild(e);
+    return e;
+  }
+  function xy(sq) { var x = sq & 7, y = sq >> 3; if (flipped()) { x = 7 - x; y = 7 - y; } return [x * 100, (7 - y) * 100]; }
+  // Centrage optique des chiffres : on mesure l'encre réelle de chaque chiffre dans la police chargée
+  // (les chiffres elzéviriens de Cormorant descendent ou montent selon le chiffre), puis on place son centre
+  // au centre visuel de la forme.
+  var GLYPH = {}, measureCtx = null;
+  function glyphOffset(txt, size) {
+    var key = size + '|' + txt;
+    if (GLYPH[key]) return GLYPH[key];
+    var off = [0, size * 0.33];
+    try {
+      measureCtx = measureCtx || document.createElement('canvas').getContext('2d');
+      var fam = getComputedStyle(document.documentElement).getPropertyValue('--font-num').trim() || 'serif';
+      measureCtx.font = '700 ' + size + 'px ' + fam; measureCtx.textAlign = 'center'; measureCtx.textBaseline = 'alphabetic';
+      var m = measureCtx.measureText(txt);
+      if (typeof m.actualBoundingBoxAscent === 'number' && m.actualBoundingBoxAscent > 0)
+        off = [(m.actualBoundingBoxLeft - m.actualBoundingBoxRight) / 2, (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2];
+    } catch (e) {}
+    GLYPH[key] = off;
+    return off;
+  }
+  var SHAPE_CENTER = [50, 59, 50];  // centre visuel : cercle, triangle (centre du cercle inscrit), carré
+  // Polygone à coins arrondis (rayon r) sous forme de chemin SVG
+  function roundedPath(pts, r) {
+    var n = pts.length, d = '';
+    for (var i = 0; i < n; i++) {
+      var P = pts[i], A = pts[(i + n - 1) % n], B = pts[(i + 1) % n];
+      var la = Math.hypot(A[0] - P[0], A[1] - P[1]), lb = Math.hypot(B[0] - P[0], B[1] - P[1]);
+      var p1 = [P[0] + (A[0] - P[0]) * r / la, P[1] + (A[1] - P[1]) * r / la];
+      var p2 = [P[0] + (B[0] - P[0]) * r / lb, P[1] + (B[1] - P[1]) * r / lb];
+      d += (i ? 'L' : 'M') + p1[0].toFixed(1) + ',' + p1[1].toFixed(1) + 'Q' + P[0] + ',' + P[1] + ' ' + p2[0].toFixed(1) + ',' + p2[1].toFixed(1);
+    }
+    return d + 'Z';
+  }
+  var DEPTH = 9, LIFT = 4;  // épaisseur visible de la tranche, et légère surélévation de la face
+  var TRI = [[50, 11], [90, 82], [10, 82]], TRI_R = 9, SQ_R = 11;
+  function shapeEl(g, sh, X, Y, attrs) {
+    if (sh === 0) { attrs.cx = X + 50; attrs.cy = Y + 50; attrs.r = 35; return el('circle', attrs, g); }
+    if (sh === 1) { attrs.d = roundedPath(TRI.map(function (q) { return [X + q[0], Y + q[1]]; }), TRI_R); return el('path', attrs, g); }
+    attrs.x = X + 16; attrs.y = Y + 16; attrs.width = 68; attrs.height = 68; attrs.rx = SQ_R; return el('rect', attrs, g);
+  }
+  // Contour échantillonné de la face (mêmes arrondis que shapeEl)
+  function outline(sh, X, Y) {
+    var pts = [], k;
+    if (sh === 0) { for (k = 0; k < 64; k++) { var a = k * Math.PI / 32; pts.push([X + 50 + 35 * Math.cos(a), Y + 50 + 35 * Math.sin(a)]); } return pts; }
+    var poly = sh === 1 ? TRI : [[16, 16], [84, 16], [84, 84], [16, 84]], r = sh === 1 ? TRI_R : SQ_R, n = poly.length;
+    for (var i = 0; i < n; i++) {
+      var P = poly[i], A = poly[(i + n - 1) % n], B = poly[(i + 1) % n];
+      var la = Math.hypot(A[0] - P[0], A[1] - P[1]), lb = Math.hypot(B[0] - P[0], B[1] - P[1]);
+      var p1 = [P[0] + (A[0] - P[0]) * r / la, P[1] + (A[1] - P[1]) * r / la], p2 = [P[0] + (B[0] - P[0]) * r / lb, P[1] + (B[1] - P[1]) * r / lb];
+      for (k = 0; k <= 8; k++) {  // arrondi : courbe quadratique p1 -> P -> p2 (le carré utilise un arc, très proche)
+        var t = k / 8, u = 1 - t;
+        pts.push([X + u * u * p1[0] + 2 * u * t * P[0] + t * t * p2[0], Y + u * u * p1[1] + 2 * u * t * P[1] + t * t * p2[1]]);
+      }
+    }
+    return pts;
+  }
+  // Enveloppe convexe (chaîne monotone)
+  function hull(pts) {
+    pts = pts.slice().sort(function (a, b) { return a[0] - b[0] || a[1] - b[1]; });
+    function cross(o, a, b) { return (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]); }
+    var lo = [], up = [], i;
+    for (i = 0; i < pts.length; i++) { while (lo.length >= 2 && cross(lo[lo.length - 2], lo[lo.length - 1], pts[i]) <= 0) lo.pop(); lo.push(pts[i]); }
+    for (i = pts.length - 1; i >= 0; i--) { while (up.length >= 2 && cross(up[up.length - 2], up[up.length - 1], pts[i]) <= 0) up.pop(); up.push(pts[i]); }
+    return lo.slice(0, -1).concat(up.slice(0, -1));
+  }
+  function drawPiece(g, p, X, Y) {
+    var black = OWN(p) === 1, fill = black ? 'var(--ebony)' : 'var(--ivory)', ink = black ? 'var(--ebony-ink)' : 'var(--ivory-ink)';
+    var stroke = black ? 'var(--ebony-stroke)' : 'var(--ivory-ink)', edge = black ? 'var(--ebony-edge)' : 'var(--ivory-edge)', sh = SHP(p);
+    // tranche : enveloppe de la face et de sa copie abaissée, ce qui relie chaque coin du dessus au coin du dessous par une arête droite
+    var top = outline(sh, X, Y - LIFT), low = top.map(function (q) { return [q[0], q[1] + DEPTH]; });
+    var H = hull(top.concat(low)), d = 'M' + H.map(function (q) { return q[0].toFixed(1) + ',' + q[1].toFixed(1); }).join('L') + 'Z';
+    el('path', { d: d, fill: edge, stroke: stroke, 'stroke-width': 3.5, 'stroke-linejoin': 'round' }, g);
+    // face supérieure
+    shapeEl(g, sh, X, Y - LIFT, { fill: fill, stroke: stroke, 'stroke-width': 3.5, 'stroke-linejoin': 'round' });
+    var size = sh === 1 ? 38 : 46, txt = String(VAL(p)), off = glyphOffset(txt, size);
+    var t = el('text', { x: (X + 50 + off[0]).toFixed(1), y: (Y - LIFT + SHAPE_CENTER[sh] + off[1]).toFixed(1), 'text-anchor': 'middle', fill: ink, 'font-family': 'var(--font-num)', 'font-weight': 700, 'font-size': size }, g);
+    t.textContent = txt;
+  }
+  function render() {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var targets = {}, preview = {};
+    if (sel >= 0) movesFrom(sel).forEach(function (m) { targets[m & 63] = m; });
+    if (hoverTarget >= 0 && targets[hoverTarget] !== undefined) {
+      var t = applyMove(st, targets[hoverTarget]);
+      t.last.caps.forEach(function (c) { preview[c[0]] = true; });
+    }
+    var last = st.last;
+    for (var sq = 0; sq < 64; sq++) {
+      var pos = xy(sq), X = pos[0], Y = pos[1];
+      var g = el('g', { class: 'sq', 'data-sq': sq }, svg);
+      el('rect', { x: X, y: Y, width: 100, height: 100, fill: 'var(--board)' }, g);
+      if (last && (sq === last.from || sq === last.to)) el('rect', { x: X, y: Y, width: 100, height: 100, fill: 'var(--mark)', opacity: 0.22 }, g);
+      if (sq === sel) el('rect', { x: X + 3, y: Y + 3, width: 94, height: 94, fill: 'none', stroke: 'var(--mark)', 'stroke-width': 6 }, g);
+      // coordonnées
+      var col = sq & 7, row = sq >> 3;
+      var edgeRow = flipped() ? 7 : 0, edgeCol = flipped() ? 7 : 0;
+      if (row === edgeRow) { var lt = el('text', { x: X + 92, y: Y + 94, 'text-anchor': 'end', 'font-size': 15, fill: 'var(--grid)', opacity: 0.55, 'font-family': 'var(--font-ui)', 'font-weight': 600 }, g); lt.textContent = 'abcdefgh'[col]; }
+      if (col === edgeCol) { var nt = el('text', { x: X + 7, y: Y + 19, 'font-size': 15, fill: 'var(--grid)', opacity: 0.55, 'font-family': 'var(--font-ui)', 'font-weight': 600 }, g); nt.textContent = row + 1; }
+      // fantômes des pièces prises au dernier coup
+      if (last && !st.b[sq]) last.caps.forEach(function (c) { if (c[0] === sq && c[0] !== last.to) el('circle', { cx: X + 50, cy: Y + 50, r: 30, fill: 'none', stroke: 'var(--danger)', 'stroke-width': 3, 'stroke-dasharray': '6 6', class: 'flash' }, g); });
+      if (st.b[sq]) drawPiece(g, st.b[sq], X, Y);
+      if (preview[sq]) el('circle', { cx: X + 50, cy: Y + 50, r: 44, fill: 'none', stroke: 'var(--danger)', 'stroke-width': 6 }, g);
+      if (targets[sq] !== undefined) {
+        var takes = fastCaps(st, targets[sq]) > 0;
+        if (takes) el('circle', { cx: X + 50, cy: Y + 50, r: 46, fill: 'none', stroke: 'var(--danger)', 'stroke-width': 5, opacity: 0.85 }, g);
+        else el('circle', { cx: X + 50, cy: Y + 50, r: 13, fill: 'var(--mark)', opacity: 0.8 }, g);
+      }
+    }
+    // quadrillage façon shogi : traits fins, cadre et ligne médiane plus épais
+    var grid = el('g', { 'pointer-events': 'none', stroke: 'var(--grid)', 'stroke-linecap': 'square' }, svg);
+    for (var k = 1; k < 8; k++) {
+      el('line', { x1: k * 100, y1: 0, x2: k * 100, y2: 800, 'stroke-width': 1.6 }, grid);
+      if (k !== 4) el('line', { x1: 0, y1: k * 100, x2: 800, y2: k * 100, 'stroke-width': 1.6 }, grid);
+    }
+    el('line', { x1: 0, y1: 400, x2: 800, y2: 400, 'stroke-width': 4.5 }, grid);
+    el('rect', { x: 1.5, y: 1.5, width: 797, height: 797, fill: 'none', 'stroke-width': 3 }, grid);
+    if (st.result >= 0 && st.line) {
+      st.line.forEach(function (q) { var P = xy(q); el('circle', { cx: P[0] + 50, cy: P[1] + 50, r: 46, fill: 'none', stroke: 'var(--mark)', 'stroke-width': 6, 'pointer-events': 'none' }, svg); });
+    }
+    renderSide();
+  }
+  function valsBox(i) {
+    var box = document.getElementById('vals' + i); box.innerHTML = '';
+    var cnt = { 2: 0, 3: 0, 4: 0, 6: 0 }, distinct = 0;
+    for (var q = 0; q < 64; q++) { var p = st.b[q]; if (p && OWN(p) === i) cnt[VAL(p)]++; }
+    [2, 3, 4, 6].forEach(function (v) { if (cnt[v]) distinct++; });
+    [2, 3, 4, 6].forEach(function (v) {
+      var d = document.createElement('span');
+      d.className = 'val' + (cnt[v] ? '' : ' gone') + (cnt[v] && distinct === 3 ? ' warn' : '');
+      d.textContent = v; d.title = cnt[v] + ' pièce' + (cnt[v] > 1 ? 's' : '') + ' de ' + v;
+      box.appendChild(d);
+    });
+    var c = document.createElement('span'); c.className = 'count'; c.textContent = st.cap[i] + ' prise' + (st.cap[i] > 1 ? 's' : ''); box.appendChild(c);
+  }
+  function sideName(i) { return i === 0 ? 'Blancs' : 'Noirs'; }
+  function renderSide() {
+    valsBox(0); valsBox(1);
+    for (var i = 0; i < 2; i++) {
+      document.getElementById('p' + i).classList.toggle('turn', st.result < 0 && st.turn === i);
+      document.getElementById('t' + i).textContent = st.result < 0 && st.turn === i ? (thinking ? 'réfléchit' : 'au trait') : '';
+    }
+    var s = document.getElementById('status');
+    if (st.result === 2) s.innerHTML = '<b>Partie nulle</b> : ' + (st.reason === 'limite' ? '600 demi-coups joués.' : '60 demi-coups sans prise.');
+    else if (st.result >= 0) s.innerHTML = '<b>Les ' + sideName(st.result) + ' gagnent</b> ' + REASON[st.reason] + '.';
+    else if (auto() && paused) s.innerHTML = 'Partie automatique <b>en pause</b> (' + sideName(st.turn).toLowerCase() + ' au trait).';
+    else if (thinking) s.innerHTML = auto() ? 'Les <b>' + sideName(st.turn) + '</b> réfléchissent…' : 'L’ordinateur réfléchit…';
+    else if (auto()) s.innerHTML = 'Partie automatique : aux <b>' + sideName(st.turn) + '</b>.';
+    else if (aiSide() < 0) s.innerHTML = 'Aux <b>' + sideName(st.turn) + '</b> de jouer.';
+    else s.innerHTML = 'À vous de jouer (' + sideName(st.turn).toLowerCase() + ').';
+    var l = document.getElementById('last'), L = st.last;
+    if (!L) l.textContent = 'Touchez une pièce pour voir ses coups.';
+    else {
+      var txt = sideName(L.mover) + ' : ' + sqName(L.from) + '–' + sqName(L.to);
+      if (L.caps.length) txt += ' <span class="cap">' + L.caps.map(function (c) { return c[2] + ' en ' + sqName(c[0]) + ' (' + VAL(c[1]) + ')'; }).join(', ') + '</span>';
+      l.innerHTML = txt;
+    }
+    document.getElementById('nocap').textContent = 'Sans prise : ' + st.nocap + ' / 60 demi-coups';
+    document.getElementById('undo').disabled = hist.length === 0;
+    pauseEl.hidden = !auto() || st.result >= 0;
+  }
+  var REASON = { triomphe: 'par triomphe', epuisement: 'par épuisement : l’adversaire n’a plus trois nombres différents', bloque: 'par blocage' };
+
+  // ---------- résultat ----------
+  function showResult() {
+    var title = document.getElementById('result-title'), txt = document.getElementById('result-text');
+    if (st.result === 2) { title.textContent = 'Partie nulle'; txt.textContent = st.reason === 'limite' ? 'La partie a atteint 600 demi-coups.' : '60 demi-coups se sont suivis sans aucune prise.'; }
+    else {
+      var ai = aiSide();
+      title.textContent = ai < 0 ? 'Victoire des ' + sideName(st.result) : (st.result === ai ? 'L’ordinateur gagne' : 'Vous gagnez');
+      if (st.reason === 'triomphe') {
+        var vs = st.line.map(function (q) { return VAL(st.b[q]); });
+        txt.textContent = 'Triomphe ' + vs.join('-') + ' en ' + st.line.map(sqName).join(', ') + ', en ' + st.ply + ' demi-coups.';
+      } else if (st.reason === 'epuisement') txt.textContent = 'L’adversaire n’a plus trois nombres différents : il ne peut plus triompher.';
+      else txt.textContent = 'L’adversaire ne peut plus jouer.';
+    }
+    document.getElementById('result').hidden = false;
+  }
+
+  // ---------- taille du plateau : tout l'écran, sans défilement ----------
+  var wrap = document.getElementById('boardwrap');
+  function fit() {
+    var s = Math.floor(Math.min(wrap.clientWidth, wrap.clientHeight));
+    if (s > 0) { svg.style.width = s + 'px'; svg.style.height = s + 'px'; }
+  }
+  if (window.ResizeObserver) new ResizeObserver(fit).observe(wrap);
+  window.addEventListener('resize', fit);
+
+  // ---------- événements ----------
+  function sqFromEvent(e) { var g = e.target.closest && e.target.closest('.sq'); return g ? +g.getAttribute('data-sq') : -1; }
+  svg.addEventListener('click', function (e) { var sq = sqFromEvent(e); if (sq >= 0) onSquare(sq); });
+  svg.addEventListener('pointermove', function (e) {
+    if (e.pointerType !== 'mouse' || sel < 0) return;
+    var sq = sqFromEvent(e); if (sq !== hoverTarget) { hoverTarget = sq; render(); }
+  });
+  svg.addEventListener('pointerleave', function () { if (hoverTarget >= 0) { hoverTarget = -1; render(); } });
+  function newGame() {
+    aiToken++; thinking = false; paused = false; pauseEl.textContent = 'Pause'; st = initial(); hist = []; sel = -1; hoverTarget = -1;
+    document.getElementById('result').hidden = true;
+    render(); save(); maybeAI();
+  }
+  document.getElementById('newgame').onclick = newGame;
+  document.getElementById('again').onclick = newGame;
+  document.getElementById('look').onclick = function () { document.getElementById('result').hidden = true; };
+  document.getElementById('undo').onclick = function () {
+    if (!hist.length) return;
+    aiToken++; thinking = false;
+    st = hist.pop();
+    if (auto()) { paused = true; pauseEl.textContent = 'Reprendre'; }
+    // contre l'ordinateur : revenir jusqu'à son propre tour
+    while (!auto() && aiSide() >= 0 && st.turn === aiSide() && hist.length) st = hist.pop();
+    sel = -1; document.getElementById('result').hidden = true;
+    render(); save(); maybeAI();
+  };
+  modeEl.onchange = function () { aiToken++; thinking = false; paused = false; pauseEl.textContent = 'Pause'; sel = -1; render(); save(); maybeAI(); };
+  levelEl.onchange = function () { save(); if (auto() && thinking) { aiToken++; thinking = false; maybeAI(); } };
+  var rules = document.getElementById('rules');
+  document.getElementById('rulesbtn').onclick = function () { rules.hidden = false; document.getElementById('closerules').focus(); };
+  document.getElementById('closerules').onclick = function () { rules.hidden = true; };
+  rules.addEventListener('click', function (e) { if (e.target === rules) rules.hidden = true; });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') { rules.hidden = true; document.getElementById('result').hidden = true; } });
+
+  // ---------- démarrage ----------
+  // quand la police des chiffres arrive (ou change), on remesure et on redessine
+  if (document.fonts) {
+    var refit = function () { GLYPH = {}; render(); };
+    if (document.fonts.ready) document.fonts.ready.then(refit);
+    if (document.fonts.addEventListener) document.fonts.addEventListener('loadingdone', refit);
+  }
+  function start(data) {
+    if (data && data.st) load(data);
+    else { try { load(JSON.parse(localStorage.getItem('rm-site-game'))); } catch (e) {} }
+    fit(); render();
+    if (st.result >= 0) showResult(); else maybeAI();
+  }
+  var hot = window.claude && window.claude.hot;
+  if (hot && hot.ready) hot.ready(start); else start(hot && hot.data ? hot.data : null);
+})();
+</script>
+
+</html>
