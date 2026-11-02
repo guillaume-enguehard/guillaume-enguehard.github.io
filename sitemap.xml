@@ -60,4 +60,14 @@
     <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/rithmomachia/play/"/>
     <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/rithmomachia/play/fr.html"/>
   </url>
+  <url>
+    <loc>https://guillaume-enguehard.github.io/games/tsugi/play/</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/tsugi/play/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/tsugi/play/fr.html"/>
+  </url>
+  <url>
+    <loc>https://guillaume-enguehard.github.io/games/tsugi/play/fr.html</loc>
+    <xhtml:link rel="alternate" hreflang="en" href="https://guillaume-enguehard.github.io/games/tsugi/play/"/>
+    <xhtml:link rel="alternate" hreflang="fr" href="https://guillaume-enguehard.github.io/games/tsugi/play/fr.html"/>
+  </url>
 </urlset>
